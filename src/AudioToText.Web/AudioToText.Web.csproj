@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>AudioToText.Web</RootNamespace>
+    <UserSecretsId>audiototext-web-7f9c</UserSecretsId>
+  </PropertyGroup>
+
+</Project>

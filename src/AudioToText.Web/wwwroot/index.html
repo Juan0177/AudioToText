@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AudioToText</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/css/site.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="page">
+    <main class="container py-4 py-md-5">
+      <header class="mb-4 mb-md-5">
+        <p class="brand mb-2">AudioToText</p>
+        <h1 class="tagline">Trascrivi i vocali di WhatsApp</h1>
+        <p class="lead-muted mb-0">
+          Carica un audio o registra dal microfono. La trascrizione gira su Cloudflare Workers AI (Whisper).
+        </p>
+      </header>
+
+      <section class="panel" aria-labelledby="upload-heading">
+        <h2 id="upload-heading" class="visually-hidden">Carica audio</h2>
+        <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Trascina o scegli un file audio">
+          <p class="mb-1 fw-semibold">Trascina qui il vocale</p>
+          <p class="mb-3 small text-secondary">oppure clicca per scegliere (ogg, opus, m4a, mp3, wav, webm)</p>
+          <button type="button" id="pickFileBtn" class="btn btn-accent">Scegli file</button>
+          <input type="file" id="fileInput" class="d-none" accept="audio/*,.ogg,.opus,.m4a,.mp3,.wav,.webm,.mp4" />
+        </div>
+
+        <div class="controls row g-3 align-items-end mt-3">
+          <div class="col-sm-6 col-md-4">
+            <label for="language" class="form-label">Lingua</label>
+            <select id="language" class="form-select">
+              <option value="italian" selected>Italiano</option>
+              <option value="auto">Rileva automatico</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          <div class="col-sm-6 col-md-4">
+            <label class="form-label d-block">Microfono</label>
+            <button type="button" id="recordBtn" class="btn btn-outline-light w-100">Registra</button>
+          </div>
+          <div class="col-12 col-md-4">
+            <p id="status" class="status mb-0" role="status" aria-live="polite">Pronto.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel mt-4" aria-labelledby="result-heading">
+        <div class="d-flex justify-content-between align-items-center mb-2 gap-2 flex-wrap">
+          <h2 id="result-heading" class="h5 mb-0">Trascrizione</h2>
+          <div class="btn-group">
+            <button type="button" id="copyBtn" class="btn btn-sm btn-outline-light" disabled>Copia</button>
+            <button type="button" id="downloadBtn" class="btn btn-sm btn-outline-light" disabled>Scarica .txt</button>
+            <button type="button" id="clearBtn" class="btn btn-sm btn-outline-light" disabled>Pulisci</button>
+          </div>
+        </div>
+        <textarea id="transcript" class="form-control transcript" rows="10" readonly placeholder="Il testo apparirà qui…"></textarea>
+      </section>
+
+      <footer class="mt-4 small text-secondary">
+        Richiede <code>Cloudflare:AccountId</code> e <code>Cloudflare:ApiToken</code> in produzione.
+        In Development il provider <code>Fake</code> consente di provare l’UI senza token.
+      </footer>
+    </main>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

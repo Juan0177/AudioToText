@@ -7,18 +7,35 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node (legacy SPA)
 node_modules
 dist
 dist-ssr
 *.local
 
-# Editor directories and files
+# .NET
+bin/
+obj/
+*.user
+*.userosscache
+*.suo
+*.njsproj
+*.sw?
+.vs/
+TestResults/
+*.DotSettings.user
+appsettings.*.local.json
+secrets.json
+
+# Editor
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+
+# OS
+Thumbs.db
+
+# Wrangler
+.wrangler/
+.dev.vars
