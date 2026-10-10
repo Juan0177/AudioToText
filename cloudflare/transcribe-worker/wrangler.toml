@@ -1,0 +1,16 @@
+name = "audiototext-transcribe"
+main = "src/index.ts"
+compatibility_date = "2026-10-10"
+
+[ai]
+binding = "AI"
+
+[observability]
+enabled = true
+
+[observability.traces]
+enabled = true
+
+# Optional shared secret: wrangler secret put TRANSCRIBE_API_KEY
+# [vars]
+# ALLOWED_ORIGIN = "*"

@@ -1,45 +1,65 @@
-# Voce
+# AudioToText
 
-Trascrizione vocale **nel browser** con Whisper. Pensata per i messaggi audio di WhatsApp: carichi il file (o registri) e ottieni il testo sul dispositivo, senza bot a pagamento e senza API cloud.
+Trascrizione audio (vocali WhatsApp) con **ASP.NET Core 8** + **Cloudflare Workers AI Whisper**.
 
-## Funzionalità
+UI: Bootstrap 5 + jQuery. Backend valida l’upload e chiama Workers AI.
 
-- Caricamento drag-and-drop / file picker (ogg, opus, m4a, mp3, wav, webm, …)
-- Registrazione dal microfono
-- Whisper locale via [`@huggingface/transformers`](https://huggingface.co/docs/transformers.js) (modelli Tiny / Base / Small)
-- Lingua italiana o rilevamento automatico
-- Copia e download `.txt` della trascrizione
+## Architettura
 
-## Sviluppo locale
+Vedi [`docs/architecture.md`](docs/architecture.md).
 
-```bash
+- `src/AudioToText.Web` — app host + API `POST /api/transcriptions`
+- `cloudflare/transcribe-worker` — Worker opzionale con binding `AI`
+- `legacy/voce-browser` — vecchia SPA Whisper-in-browser
+
+## Requisiti (Windows)
+
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- Account Cloudflare + API token con permesso **Workers AI** (produzione)
+
+## Avvio locale
+
+```powershell
+cd D:\dev\AudioToText
+dotnet restore
+dotnet run --project src\AudioToText.Web
+```
+
+Apri http://localhost:5088 (profilo `http`).
+
+In **Development** il provider è `Fake` (`appsettings.Development.json`): l’UI funziona senza token.
+
+### Cloudflare (produzione / STT reale)
+
+```powershell
+dotnet user-secrets set "Cloudflare:AccountId" "<account_id>" --project src\AudioToText.Web
+dotnet user-secrets set "Cloudflare:ApiToken" "<api_token>" --project src\AudioToText.Web
+```
+
+Poi in `appsettings.Development.json` (o env):
+
+```json
+"Transcription": { "Provider": "CloudflareRest" }
+```
+
+Env vars equivalenti: `Cloudflare__AccountId`, `Cloudflare__ApiToken`, `Transcription__Provider`.
+
+### Worker edge (opzionale)
+
+```powershell
+cd cloudflare\transcribe-worker
 npm install
-npm run dev
+npx wrangler deploy
 ```
 
-Apri [http://127.0.0.1:43127](http://127.0.0.1:43127).
+## Test
 
-Al primo avvio il browser scarica il modello Whisper (poi resta in cache).
-
-```bash
-npm run build
-npm run preview
+```powershell
+dotnet test
 ```
-
-## Accessibile da tutte le parti
-
-L’app è statica: l’audio viene elaborato **sul dispositivo** di chi apre la pagina.
-
-1. Crea la repository GitHub (pulsante **Create repo** nell’agent, se non l’hai già fatto).
-2. Collega il repo a **Cloudflare Pages**, **Vercel** o **Netlify**.
-3. Build command: `npm run build`
-4. Output directory: `dist`
-5. Apri l’URL pubblico dal telefono o da qualsiasi PC.
-
-Suggerimento telefono: aggiungi la pagina alla schermata Home per aprirla come un’app.
 
 ## Note
 
-- Su alcuni browser i vocali `.ogg` di WhatsApp si aprono meglio se esportati/condivisi come file; se la decodifica fallisce, converti in m4a/mp3/wav.
-- Il modello Tiny è il più adatto al telefono; Small è più accurato ma più lento al primo download.
-- Serve un browser moderno con WebAssembly.
+- Formati: ogg, opus, m4a, mp3, wav, webm, …
+- Max upload default: 25 MB
+- Modello default: `@cf/openai/whisper`
