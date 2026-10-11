@@ -272,7 +272,7 @@ label.btn-accent[aria-disabled="true"] {
 .tldr-body p,
 .tldr-body ul,
 .tldr-body li {
-  color: var(--foam) !important;
+  color: #ffffff !important;
   line-height: 1.65;
   font-size: 1.08rem;
 }
