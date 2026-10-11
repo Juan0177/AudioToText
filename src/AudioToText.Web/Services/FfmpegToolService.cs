@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Net;
 
 namespace AudioToText.Web.Services;
 
@@ -23,7 +24,7 @@ public sealed class FfmpegStatusDto
     public long? BytesTotal { get; init; }
     public string? Message { get; init; }
     public string Requirements { get; init; } =
-        "Download ~80–100 MB. Serve per ogg/opus/m4a/webm (WhatsApp). WAV/MP3 possono funzionare senza.";
+        "Download da GitHub (BtbN) ~80–90 MB. Serve per ogg/opus/m4a/webm (WhatsApp). WAV/MP3 possono funzionare senza.";
 }
 
 public interface IFfmpegToolService
@@ -35,21 +36,27 @@ public interface IFfmpegToolService
 }
 
 /// <summary>
-/// Resolves ffmpeg (bundled tools/ffmpeg → env → PATH) and can download a portable Windows/Linux build.
+/// Resolves ffmpeg (bundled tools/ffmpeg → env → PATH) and downloads a portable
+/// Windows/Linux build from GitHub (BtbN/FFmpeg-Builds) — fast vs gyan.dev from EU.
 /// </summary>
 public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
 {
-    // Pinned essentials build (Windows). Linux uses johnvansickle static amd64.
-    private const string WindowsZipUrl =
-        "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip";
-    private const string LinuxTarUrl =
-        "https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz";
+    // Pinned autobuild (n8.1 shared — smaller, GitHub CDN). Floating "latest" as fallback.
+    private const string WindowsPrimaryUrl =
+        "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-11-13-04/ffmpeg-n8.1.3-17-gc389840894-win64-gpl-shared-8.1.zip";
+    private const string WindowsFallbackUrl =
+        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip";
 
-    private const long ApproxWindowsBytes = 95L * 1024 * 1024;
-    private const long ApproxLinuxBytes = 75L * 1024 * 1024;
+    private const string LinuxPrimaryUrl =
+        "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-11-13-04/ffmpeg-n8.1.3-17-gc389840894-linux64-gpl-shared-8.1.tar.xz";
+    private const string LinuxFallbackUrl =
+        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl-shared.tar.xz";
+
+    private const long ApproxWindowsBytes = 90L * 1024 * 1024;
+    private const long ApproxLinuxBytes = 70L * 1024 * 1024;
+    private const int CopyBufferSize = 512 * 1024;
 
     private readonly object _gate = new();
-    private readonly IHostEnvironment _env;
     private readonly AppLocalSettingsStore _settings;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<FfmpegToolService> _logger;
@@ -62,13 +69,17 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
     private string? _message;
     private CancellationTokenSource? _cts;
 
+    // Cache resolution so progress polling does not spawn ffmpeg -version repeatedly.
+    private string? _resolvedPath;
+    private FfmpegSourceKind _resolvedKind = FfmpegSourceKind.Missing;
+    private DateTime _resolvedAtUtc = DateTime.MinValue;
+
     public FfmpegToolService(
         IHostEnvironment env,
         AppLocalSettingsStore settings,
         IHttpClientFactory httpClientFactory,
         ILogger<FfmpegToolService> logger)
     {
-        _env = env;
         _settings = settings;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
@@ -78,19 +89,37 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
 
     public FfmpegStatusDto GetStatus()
     {
-        var (path, kind) = ResolveWithKind();
+        string? path;
+        FfmpegSourceKind kind;
+        lock (_gate)
+        {
+            if (_isDownloading)
+            {
+                // Avoid PATH/exe probes while downloading — progress is what matters.
+                path = _resolvedPath;
+                kind = path is not null ? _resolvedKind : FfmpegSourceKind.Missing;
+                return new FfmpegStatusDto
+                {
+                    Available = path is not null,
+                    Source = SourceLabel(kind),
+                    SourceKind = kind.ToString(),
+                    Path = path,
+                    IsDownloading = true,
+                    DownloadPercent = _downloadPercent,
+                    BytesDownloaded = _bytesDownloaded,
+                    BytesTotal = _bytesTotal ?? (OperatingSystem.IsWindows() ? ApproxWindowsBytes : ApproxLinuxBytes),
+                    Message = _message ?? "Download ffmpeg da GitHub…"
+                };
+            }
+        }
+
+        (path, kind) = ResolveWithKind();
         lock (_gate)
         {
             return new FfmpegStatusDto
             {
                 Available = path is not null,
-                Source = kind switch
-                {
-                    FfmpegSourceKind.Bundled => "Trovato locale (tools/ffmpeg)",
-                    FfmpegSourceKind.Path => "Trovato nel PATH di sistema",
-                    FfmpegSourceKind.Env => "Trovato via FFMPEG_PATH",
-                    _ => "Mancante"
-                },
+                Source = SourceLabel(kind),
                 SourceKind = kind.ToString(),
                 Path = path,
                 IsDownloading = _isDownloading,
@@ -98,7 +127,7 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
                 BytesDownloaded = _bytesDownloaded,
                 BytesTotal = _bytesTotal ?? (OperatingSystem.IsWindows() ? ApproxWindowsBytes : ApproxLinuxBytes),
                 Message = _message ?? (path is null
-                    ? "ffmpeg non installato. Usa «Scarica ffmpeg» per il setup automatico."
+                    ? "ffmpeg non installato. Usa «Scarica ffmpeg» (download da GitHub)."
                     : $"ffmpeg pronto ({kind}).")
             };
         }
@@ -118,6 +147,7 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
             if (ResolveBundledPath() is not null)
             {
                 _message = "ffmpeg locale già presente.";
+                InvalidateCache();
                 return;
             }
 
@@ -125,7 +155,7 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
             _downloadPercent = 0;
             _bytesDownloaded = 0;
             _bytesTotal = OperatingSystem.IsWindows() ? ApproxWindowsBytes : ApproxLinuxBytes;
-            _message = "Avvio download ffmpeg…";
+            _message = "Avvio download ffmpeg da GitHub…";
             _cts = new CancellationTokenSource();
             var token = _cts.Token;
             _ = Task.Run(() => DownloadCoreAsync(token), CancellationToken.None);
@@ -141,24 +171,42 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
         }
     }
 
+    private static string SourceLabel(FfmpegSourceKind kind) => kind switch
+    {
+        FfmpegSourceKind.Bundled => "Trovato locale (tools/ffmpeg)",
+        FfmpegSourceKind.Path => "Trovato nel PATH di sistema",
+        FfmpegSourceKind.Env => "Trovato via FFMPEG_PATH",
+        _ => "Mancante"
+    };
+
     private (string? Path, FfmpegSourceKind Kind) ResolveWithKind()
     {
+        lock (_gate)
+        {
+            if (_resolvedPath is not null &&
+                DateTime.UtcNow - _resolvedAtUtc < TimeSpan.FromSeconds(30) &&
+                File.Exists(_resolvedPath))
+            {
+                return (_resolvedPath, _resolvedKind);
+            }
+        }
+
         var bundled = ResolveBundledPath();
         if (bundled is not null)
         {
-            return (bundled, FfmpegSourceKind.Bundled);
+            return Cache(bundled, FfmpegSourceKind.Bundled);
         }
 
         var persisted = _settings.GetFfmpegPath();
         if (!string.IsNullOrWhiteSpace(persisted) && File.Exists(persisted) && VerifyRuns(persisted))
         {
-            return (persisted, FfmpegSourceKind.Bundled);
+            return Cache(persisted, FfmpegSourceKind.Bundled);
         }
 
         var fromEnv = Environment.GetEnvironmentVariable("FFMPEG_PATH");
         if (!string.IsNullOrWhiteSpace(fromEnv) && File.Exists(fromEnv) && VerifyRuns(fromEnv))
         {
-            return (fromEnv, FfmpegSourceKind.Env);
+            return Cache(fromEnv, FfmpegSourceKind.Env);
         }
 
         var exeName = OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg";
@@ -168,11 +216,33 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
             var candidate = Path.Combine(dir, exeName);
             if (File.Exists(candidate) && VerifyRuns(candidate))
             {
-                return (candidate, FfmpegSourceKind.Path);
+                return Cache(candidate, FfmpegSourceKind.Path);
             }
         }
 
-        return (null, FfmpegSourceKind.Missing);
+        return Cache(null, FfmpegSourceKind.Missing);
+    }
+
+    private (string? Path, FfmpegSourceKind Kind) Cache(string? path, FfmpegSourceKind kind)
+    {
+        lock (_gate)
+        {
+            _resolvedPath = path;
+            _resolvedKind = kind;
+            _resolvedAtUtc = DateTime.UtcNow;
+        }
+
+        return (path, kind);
+    }
+
+    private void InvalidateCache()
+    {
+        lock (_gate)
+        {
+            _resolvedPath = null;
+            _resolvedKind = FfmpegSourceKind.Missing;
+            _resolvedAtUtc = DateTime.MinValue;
+        }
     }
 
     private string? ResolveBundledPath()
@@ -205,7 +275,9 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
     private async Task DownloadCoreAsync(CancellationToken cancellationToken)
     {
         var isWindows = OperatingSystem.IsWindows();
-        var url = isWindows ? WindowsZipUrl : LinuxTarUrl;
+        var urls = isWindows
+            ? new[] { WindowsPrimaryUrl, WindowsFallbackUrl }
+            : new[] { LinuxPrimaryUrl, LinuxFallbackUrl };
         var archivePath = Path.Combine(
             _toolsDir,
             isWindows ? "ffmpeg-download.zip" : "ffmpeg-download.tar.xz");
@@ -221,37 +293,43 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
 
             Directory.CreateDirectory(extractDir);
 
-            var client = _httpClientFactory.CreateClient("ffmpeg-tools");
-            using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-            response.EnsureSuccessStatusCode();
-
-            var total = response.Content.Headers.ContentLength
-                ?? (isWindows ? ApproxWindowsBytes : ApproxLinuxBytes);
-            lock (_gate)
+            Exception? lastError = null;
+            var downloaded = false;
+            foreach (var url in urls)
             {
-                _bytesTotal = total;
-                _message = "Download ffmpeg…";
-            }
-
-            await using (var remote = await response.Content.ReadAsStreamAsync(cancellationToken))
-            await using (var file = File.Create(archivePath))
-            {
-                var buffer = new byte[81920];
-                long written = 0;
-                int read;
-                while ((read = await remote.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)) > 0)
+                cancellationToken.ThrowIfCancellationRequested();
+                try
                 {
-                    await file.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
-                    written += read;
-                    var percent = total > 0 ? (int)Math.Min(99, written * 100 / total) : 0;
                     lock (_gate)
                     {
-                        _bytesDownloaded = written;
-                        _bytesTotal = total;
-                        _downloadPercent = percent;
-                        _message = $"Download ffmpeg: {FormatBytes(written)} / {FormatBytes(total)} ({percent}%)";
+                        _downloadPercent = 0;
+                        _bytesDownloaded = 0;
+                        _message = $"Download ffmpeg da GitHub… ({HostOf(url)})";
+                    }
+
+                    await DownloadUrlAsync(url, archivePath, isWindows, cancellationToken);
+                    downloaded = true;
+                    break;
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    lastError = ex;
+                    _logger.LogWarning(ex, "ffmpeg download failed from {Url}, trying next mirror", url);
+                    TryDelete(archivePath);
+                    lock (_gate)
+                    {
+                        _message = $"Mirror lento/fallito ({HostOf(url)}), provo fallback…";
                     }
                 }
+            }
+
+            if (!downloaded)
+            {
+                throw lastError ?? new InvalidOperationException("Download ffmpeg fallito da tutti i mirror.");
             }
 
             lock (_gate)
@@ -276,22 +354,20 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
                 throw new InvalidOperationException("Archivio scaricato ma ffmpeg non trovato al suo interno.");
             }
 
+            // Shared builds need DLLs/.so next to the exe — copy the whole bin folder.
+            var binDir = Path.GetDirectoryName(found)
+                ?? throw new InvalidOperationException("Percorso ffmpeg non valido nell’archivio.");
+            CopyDirectoryContents(binDir, _toolsDir);
+
             var target = Path.Combine(_toolsDir, exeName);
-            File.Copy(found, target, overwrite: true);
+            if (!File.Exists(target))
+            {
+                File.Copy(found, target, overwrite: true);
+            }
+
             if (!OperatingSystem.IsWindows())
             {
-                try
-                {
-                    File.SetUnixFileMode(
-                        target,
-                        UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
-                        UnixFileMode.GroupRead | UnixFileMode.GroupExecute |
-                        UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
-                }
-                catch
-                {
-                    // best-effort chmod
-                }
+                TryChmodExecutable(target);
             }
 
             if (!VerifyRuns(target))
@@ -300,15 +376,16 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
             }
 
             await _settings.SetFfmpegPathAsync(target, CancellationToken.None);
+            InvalidateCache();
+            Cache(target, FfmpegSourceKind.Bundled);
 
-            // Cleanup extract + archive to save disk
             TryDelete(archivePath);
             TryDeleteDir(extractDir);
 
             lock (_gate)
             {
                 _downloadPercent = 100;
-                _message = $"ffmpeg installato in tools/ffmpeg ({FormatBytes(_bytesDownloaded)}).";
+                _message = $"ffmpeg installato in tools/ffmpeg ({FormatBytes(_bytesDownloaded)}) — GitHub BtbN.";
             }
         }
         catch (OperationCanceledException)
@@ -327,7 +404,8 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
             {
                 _downloadPercent = null;
                 _bytesDownloaded = 0;
-                _message = "Download ffmpeg fallito. Controlla la rete e riprova, oppure installa ffmpeg nel PATH.";
+                _message =
+                    "Download ffmpeg fallito. Controlla la rete e riprova (mirror GitHub), oppure installa ffmpeg nel PATH.";
             }
         }
         finally
@@ -341,9 +419,78 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
         }
     }
 
+    private async Task DownloadUrlAsync(
+        string url,
+        string archivePath,
+        bool isWindows,
+        CancellationToken cancellationToken)
+    {
+        var client = _httpClientFactory.CreateClient("ffmpeg-tools");
+        using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var total = response.Content.Headers.ContentLength
+            ?? (isWindows ? ApproxWindowsBytes : ApproxLinuxBytes);
+        lock (_gate)
+        {
+            _bytesTotal = total;
+            _message = $"Download ffmpeg da GitHub… {FormatBytes(0)} / {FormatBytes(total)}";
+        }
+
+        await using var remote = await response.Content.ReadAsStreamAsync(cancellationToken);
+        await using var file = new FileStream(
+            archivePath,
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.None,
+            CopyBufferSize,
+            FileOptions.Asynchronous | FileOptions.SequentialScan);
+
+        var buffer = new byte[CopyBufferSize];
+        long written = 0;
+        var lastProgressUtc = DateTime.MinValue;
+        int read;
+        while ((read = await remote.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)) > 0)
+        {
+            await file.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+            written += read;
+
+            // Throttle UI progress updates — never block the download loop on polling.
+            var now = DateTime.UtcNow;
+            if ((now - lastProgressUtc).TotalMilliseconds >= 200 || written >= total)
+            {
+                lastProgressUtc = now;
+                var percent = total > 0 ? (int)Math.Min(99, written * 100 / total) : 0;
+                lock (_gate)
+                {
+                    _bytesDownloaded = written;
+                    _bytesTotal = total;
+                    _downloadPercent = percent;
+                    _message = $"Download ffmpeg (GitHub): {FormatBytes(written)} / {FormatBytes(total)} ({percent}%)";
+                }
+            }
+        }
+
+        lock (_gate)
+        {
+            _bytesDownloaded = written;
+            _bytesTotal = written > 0 ? written : total;
+            _downloadPercent = 99;
+        }
+    }
+
+    private static void CopyDirectoryContents(string sourceDir, string destDir)
+    {
+        Directory.CreateDirectory(destDir);
+        foreach (var file in Directory.EnumerateFiles(sourceDir))
+        {
+            var name = Path.GetFileName(file);
+            File.Copy(file, Path.Combine(destDir, name), overwrite: true);
+        }
+    }
+
     private static async Task ExtractTarXzAsync(string archivePath, string extractDir, CancellationToken ct)
     {
-        // Prefer system tar (available on modern Linux).
         var psi = new ProcessStartInfo
         {
             FileName = "tar",
@@ -371,6 +518,7 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
             {
                 FileName = path,
                 ArgumentList = { "-version" },
+                WorkingDirectory = Path.GetDirectoryName(path) ?? string.Empty,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
@@ -393,6 +541,39 @@ public sealed class FfmpegToolService : IFfmpegToolService, IDisposable
         catch
         {
             return false;
+        }
+    }
+
+    private static void TryChmodExecutable(string target)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        try
+        {
+            File.SetUnixFileMode(
+                target,
+                UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
+                UnixFileMode.GroupRead | UnixFileMode.GroupExecute |
+                UnixFileMode.OtherRead | UnixFileMode.OtherExecute);
+        }
+        catch
+        {
+            // best-effort
+        }
+    }
+
+    private static string HostOf(string url)
+    {
+        try
+        {
+            return new Uri(url).Host;
+        }
+        catch
+        {
+            return "mirror";
         }
     }
 

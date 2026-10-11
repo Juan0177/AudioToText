@@ -29,6 +29,10 @@ builder.Services.AddHttpClient("ffmpeg-tools", client =>
 {
     client.Timeout = TimeSpan.FromMinutes(30);
     client.DefaultRequestHeaders.UserAgent.ParseAdd("AudioToText/1.0");
+}).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+{
+    AutomaticDecompression = System.Net.DecompressionMethods.All,
+    PooledConnectionLifetime = TimeSpan.FromMinutes(10)
 });
 builder.Services.AddHttpClient<CloudflareWorkersAiTranscriptionService>(client =>
 {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="it" data-bs-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -35,7 +35,7 @@
           <h2 id="upload-heading" class="visually-hidden">Carica audio</h2>
           <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Trascina o scegli un file audio">
             <p class="mb-1 fw-semibold">Trascina qui il vocale</p>
-            <p class="mb-3 small text-secondary">oppure clicca per scegliere (ogg, opus, m4a, mp3, wav, webm)</p>
+            <p class="mb-3 small text-muted-app">oppure clicca per scegliere (ogg, opus, m4a, mp3, wav, webm)</p>
             <label for="fileInput" id="pickFileBtn" class="btn btn-accent">Scegli file</label>
             <input type="file" id="fileInput" class="visually-hidden" accept="audio/*,.ogg,.opus,.m4a,.mp3,.wav,.webm,.mp4" />
           </div>
@@ -89,7 +89,7 @@
       <div id="sectionSettings" class="d-none">
         <section class="panel mb-4" aria-labelledby="provider-heading">
           <h2 id="provider-heading" class="h5 mb-2">Motore di trascrizione</h2>
-          <p class="small text-secondary mb-3">
+          <p class="small text-muted-app mb-3">
             <strong>Cloudflare</strong>: Workers AI (serve Account ID + Token).<br />
             <strong>Locale</strong>: Whisper.net sul PC (CUDA se disponibile, altrimenti CPU). Nessun secret Cloudflare.
           </p>
@@ -112,10 +112,10 @@
 
         <section class="panel mb-4" aria-labelledby="local-heading">
           <h2 id="local-heading" class="h5 mb-2">Locale — modello Whisper</h2>
-          <p class="small text-secondary mb-3" id="localHardwareHint">
+          <p class="small text-muted-app mb-3" id="localHardwareHint">
             GTX 1050 Ti (~4GB): preferisci <code>tiny</code>/<code>base</code> (CPU ok). RTX 5070: <code>small</code> su CUDA; <code>medium</code> se la VRAM basta.
           </p>
-          <p class="small text-secondary mb-3" id="localFfmpegHint">
+          <p class="small text-muted-app mb-3" id="localFfmpegHint">
             ffmpeg richiesto per vocali WhatsApp (ogg/opus). WAV/MP3 ok senza.
           </p>
           <div class="row g-3 align-items-end mb-3">
@@ -142,7 +142,7 @@
 
           <div id="modelReqsBox" class="model-reqs mb-3">
             <div class="small fw-semibold mb-1">Requisiti modello selezionato</div>
-            <ul class="small text-secondary mb-0" id="modelReqsList">
+            <ul class="small text-muted-app mb-0" id="modelReqsList">
               <li id="reqSize">Download / disco: …</li>
               <li id="reqRam">RAM: …</li>
               <li id="reqVram">VRAM: …</li>
@@ -151,7 +151,7 @@
           </div>
 
           <div id="downloadProgressWrap" class="download-progress d-none mb-3">
-            <div class="d-flex justify-content-between small text-secondary mb-1">
+            <div class="d-flex justify-content-between small text-muted-app mb-1">
               <span id="downloadProgressLabel">Download…</span>
               <span id="downloadProgressPct">0%</span>
             </div>
@@ -160,7 +160,7 @@
             </div>
           </div>
 
-          <ul class="small text-secondary mb-0 list-unstyled" id="localRuntimeDetails">
+          <ul class="small text-muted-app mb-0 list-unstyled" id="localRuntimeDetails">
             <li>Runtime: <span id="localRuntimeLabel">…</span></li>
             <li>ffmpeg: <span id="localFfmpegLabel">…</span></li>
             <li>Cartella modelli: <code id="localModelsPath">…</code></li>
@@ -170,14 +170,14 @@
 
         <section class="panel mb-4" aria-labelledby="ffmpeg-heading">
           <h2 id="ffmpeg-heading" class="h5 mb-2">Locale — ffmpeg</h2>
-          <p class="small text-secondary mb-3">
+          <p class="small text-muted-app mb-3">
             Serve per vocali WhatsApp (<code>ogg</code>/<code>opus</code>/<code>m4a</code>/<code>webm</code>).
-            WAV/MP3 possono funzionare senza. Download portable ~80–100 MB in <code>tools/ffmpeg/</code> (gitignored).
+            WAV/MP3 possono funzionare senza. Download da GitHub (BtbN/FFmpeg-Builds) ~80–90 MB in <code>tools/ffmpeg/</code> (gitignored).
           </p>
           <div class="row g-3 align-items-end mb-3">
             <div class="col-md-4">
               <span id="ffmpegStatusBadge" class="badge text-bg-secondary">…</span>
-              <div class="small text-secondary mt-1" id="ffmpegPathLabel"></div>
+              <div class="small text-muted-app mt-1" id="ffmpegPathLabel"></div>
             </div>
             <div class="col-md-4">
               <button type="button" class="btn btn-accent w-100" id="downloadFfmpegBtn">Scarica ffmpeg</button>
@@ -191,14 +191,14 @@
           </div>
           <div id="ffmpegReqsBox" class="model-reqs mb-3">
             <div class="small fw-semibold mb-1">Requisiti ffmpeg</div>
-            <ul class="small text-secondary mb-0" id="ffmpegReqsList">
-              <li>Spazio disco: decine di MB (~80–100 MB su Windows)</li>
+            <ul class="small text-muted-app mb-0" id="ffmpegReqsList">
+              <li>Download da GitHub (BtbN) ~80–90 MB — mirror veloce</li>
               <li>Formati: ogg/opus/m4a/webm (WhatsApp)</li>
               <li>WAV/MP3: spesso ok senza ffmpeg (NAudio)</li>
             </ul>
           </div>
           <div id="ffmpegProgressWrap" class="download-progress d-none mb-3">
-            <div class="d-flex justify-content-between small text-secondary mb-1">
+            <div class="d-flex justify-content-between small text-muted-app mb-1">
               <span id="ffmpegProgressLabel">Download ffmpeg…</span>
               <span id="ffmpegProgressPct">0%</span>
             </div>
@@ -206,12 +206,12 @@
               <div id="ffmpegProgressBar" class="progress-bar bg-success" style="width: 0%"></div>
             </div>
           </div>
-          <p class="small text-secondary mb-0" id="ffmpegMessageLine"></p>
+          <p class="small text-muted-app mb-0" id="ffmpegMessageLine"></p>
         </section>
 
         <section class="panel" aria-labelledby="settings-heading">
           <h2 id="settings-heading" class="h5 mb-2">Cloudflare</h2>
-          <p class="small text-secondary mb-4">
+          <p class="small text-muted-app mb-4">
             Valori in <code>appsettings.Local.json</code> (gitignored). Dopo il salvataggio i campi si svuotano.
           </p>
 
@@ -243,7 +243,7 @@
         <p id="settingsMessage" class="status mt-3 mb-0" role="status" aria-live="polite"></p>
       </div>
 
-      <footer class="mt-4 small text-secondary">
+      <footer class="mt-4 small text-muted-app">
         Impostazioni: scegli Cloudflare o Locale; i secret Cloudflare non vengono mai mostrati dopo il salvataggio.
         Locale richiede download modello (+ ffmpeg per ogg/opus WhatsApp).
       </footer>

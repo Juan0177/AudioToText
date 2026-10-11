@@ -1,22 +1,48 @@
-:root {
-  --ink: #0c1418;
-  --panel: rgba(18, 32, 38, 0.88);
-  --foam: #f3f6f4;
-  --muted: #9aa8a3;
+:root,
+[data-bs-theme="dark"] {
+  /* Surfaces (dark) */
+  --bg-deep: #071014;
+  --panel-solid: #122028;
+  --panel: rgba(18, 32, 38, 0.92);
+  --panel-inset: #0d181d;
+
+  /* Text on dark — never use near-black on panels */
+  --foam: #f3f6f4;          /* body text ~13:1 on panel */
+  --muted: #c5d0cb;         /* secondary ≥4.5:1 on #122028 */
   --accent: #2f8f7a;
-  --accent-2: #d4a35c;
-  --line: rgba(243, 246, 244, 0.14);
+  --accent-2: #e0b56a;
+  --line: rgba(243, 246, 244, 0.18);
+
+  /* Bootstrap dark-theme tokens (overrides light-theme ink) */
+  --bs-body-color: #f3f6f4;
+  --bs-body-color-rgb: 243, 246, 244;
+  --bs-body-bg: #071014;
+  --bs-body-bg-rgb: 7, 16, 20;
+  --bs-secondary-color: #c5d0cb;
+  --bs-secondary-color-rgb: 197, 208, 203;
+  --bs-tertiary-color: #c5d0cb;
+  --bs-heading-color: #f3f6f4;
+  --bs-emphasis-color: #f3f6f4;
+  --bs-border-color: rgba(243, 246, 244, 0.18);
+  --bs-form-control-bg: #0d181d;
+  --bs-secondary-bg: #0d181d;
+
   --font-display: "Fraunces", Georgia, serif;
   --font-body: "DM Sans", system-ui, sans-serif;
 }
 
 * { box-sizing: border-box; }
 
+html,
+body {
+  color: var(--foam);
+  background-color: var(--bg-deep);
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--font-body);
-  color: var(--foam);
   background:
     radial-gradient(ellipse 80% 50% at 15% -10%, rgba(47, 143, 122, 0.35), transparent 55%),
     radial-gradient(ellipse 60% 40% at 90% 0%, rgba(212, 163, 92, 0.18), transparent 50%),
@@ -31,6 +57,7 @@ body {
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1;
+  color: var(--foam);
   animation: rise 0.7s ease both;
 }
 
@@ -38,11 +65,19 @@ body {
   font-size: clamp(1.15rem, 2.5vw, 1.5rem);
   font-weight: 600;
   max-width: 28ch;
+  color: var(--foam);
   animation: rise 0.7s ease 0.08s both;
 }
 
+.lead-muted,
+.text-muted-app,
+.text-secondary {
+  /* Kill Bootstrap light-theme secondary (dark ink) on our dark UI */
+  color: var(--muted) !important;
+  max-width: none;
+}
+
 .lead-muted {
-  color: var(--muted);
   max-width: 46ch;
   animation: rise 0.7s ease 0.14s both;
 }
@@ -52,8 +87,29 @@ body {
   border: 1px solid var(--line);
   border-radius: 1rem;
   padding: 1.25rem 1.35rem;
+  color: var(--foam);
   backdrop-filter: blur(10px);
   animation: rise 0.7s ease 0.2s both;
+}
+
+.panel h1,
+.panel h2,
+.panel h3,
+.panel h4,
+.panel h5,
+.panel .h5,
+.panel .h6,
+.panel p,
+.panel li,
+.panel label,
+.panel code,
+.panel .form-label {
+  color: var(--foam);
+}
+
+.panel .small,
+.panel small {
+  color: var(--muted);
 }
 
 .drop-zone {
@@ -61,8 +117,18 @@ body {
   border-radius: 0.85rem;
   padding: 2rem 1.25rem;
   text-align: center;
+  color: var(--foam);
   transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
   cursor: pointer;
+}
+
+.drop-zone p {
+  color: var(--foam);
+}
+
+.drop-zone .small,
+.drop-zone .text-secondary {
+  color: var(--muted) !important;
 }
 
 .drop-zone:hover,
@@ -84,7 +150,6 @@ body {
   font-weight: 600;
 }
 
-/* label styled as button */
 label.btn-accent {
   margin-bottom: 0;
   cursor: pointer;
@@ -99,23 +164,37 @@ label.btn-accent[aria-disabled="true"] {
 .form-select,
 .form-control,
 .btn-outline-light {
-  background-color: rgba(7, 16, 20, 0.55);
-  border-color: var(--line);
-  color: var(--foam);
+  background-color: var(--panel-inset) !important;
+  border-color: var(--line) !important;
+  color: var(--foam) !important;
+}
+
+.form-control::placeholder {
+  color: var(--muted);
+  opacity: 0.85;
 }
 
 .form-select:focus,
 .form-control:focus {
-  background-color: rgba(7, 16, 20, 0.75);
-  border-color: var(--accent);
-  color: var(--foam);
+  background-color: #101c22 !important;
+  border-color: var(--accent) !important;
+  color: var(--foam) !important;
   box-shadow: 0 0 0 0.2rem rgba(47, 143, 122, 0.25);
+}
+
+.form-control:disabled,
+.form-control[readonly] {
+  background-color: var(--panel-inset) !important;
+  color: var(--foam) !important;
+  opacity: 1;
 }
 
 .transcript {
   resize: vertical;
   min-height: 12rem;
   line-height: 1.55;
+  color: var(--foam) !important;
+  background-color: var(--panel-inset) !important;
 }
 
 .status {
@@ -146,7 +225,14 @@ label.btn-accent[aria-disabled="true"] {
   border: 1px solid var(--line);
   border-radius: 0.75rem;
   padding: 0.85rem 1rem;
-  background: rgba(7, 16, 20, 0.35);
+  background: var(--panel-inset);
+  color: var(--foam);
+}
+
+.model-reqs .small,
+.model-reqs li,
+.model-reqs ul {
+  color: var(--muted);
 }
 
 .download-progress .progress {
@@ -158,52 +244,64 @@ label.btn-accent[aria-disabled="true"] {
   transition: width 0.25s ease;
 }
 
+.download-progress .small {
+  color: var(--muted) !important;
+}
+
 .tldr-panel {
   margin-top: 1.25rem;
   padding: 1.1rem 1.15rem 1.2rem;
-  border: 1px solid rgba(47, 143, 122, 0.35);
+  border: 1px solid rgba(47, 143, 122, 0.45);
   border-radius: 0.85rem;
-  background: rgba(7, 16, 20, 0.55);
+  background: var(--panel-inset);
+  color: var(--foam);
 }
 
 .tldr-panel h3 {
-  color: var(--foam);
-  font-size: 1.1rem;
+  color: var(--foam) !important;
+  font-size: 1.15rem;
   font-weight: 700;
 }
 
 .tldr-panel #tldrMethodLabel {
-  color: #c5d0cb;
-  font-size: 0.9rem;
+  color: var(--muted) !important;
+  font-size: 0.95rem;
+}
+
+.tldr-body,
+.tldr-body p,
+.tldr-body ul,
+.tldr-body li {
+  color: var(--foam) !important;
+  line-height: 1.65;
+  font-size: 1.08rem;
 }
 
 .tldr-body {
-  color: var(--foam);
-  line-height: 1.65;
-  font-size: 1.05rem;
   min-height: 4.5rem;
   overflow-wrap: anywhere;
   word-break: break-word;
   white-space: normal;
 }
 
-.tldr-body p {
-  margin: 0;
-  color: var(--foam);
-}
+.tldr-body p { margin: 0; }
 
 .tldr-body ul {
   margin: 0.25rem 0 0;
   padding-left: 1.25rem;
-  color: var(--foam);
-}
-
-.tldr-body li {
-  color: var(--foam);
 }
 
 .tldr-body li + li {
   margin-top: 0.45rem;
+}
+
+footer,
+footer.small {
+  color: var(--muted) !important;
+}
+
+code {
+  color: #d8ebe4;
 }
 
 .btn.is-recording {
