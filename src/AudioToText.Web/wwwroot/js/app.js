@@ -23,7 +23,19 @@
 
   function setBusy(next) {
     busy = next;
-    $("#pickFileBtn, #recordBtn, #language").prop("disabled", next);
+    $("#recordBtn, #language").prop("disabled", next);
+    $("#pickFileBtn").toggleClass("disabled", next).attr("aria-disabled", next ? "true" : "false");
+    $fileInput.prop("disabled", next);
+  }
+
+  function openFilePicker() {
+    if (busy) {
+      return;
+    }
+    var input = $fileInput.get(0);
+    if (input) {
+      input.click();
+    }
   }
 
   function setTranscript(text) {
@@ -67,21 +79,25 @@
       });
   }
 
+  // Label[for=fileInput] opens the dialog natively; stop dropZone from double-firing.
   $("#pickFileBtn").on("click", function (e) {
     e.stopPropagation();
-    $fileInput.trigger("click");
+    if (busy) {
+      e.preventDefault();
+    }
   });
 
-  $dropZone.on("click", function () {
-    if (!busy) {
-      $fileInput.trigger("click");
+  $dropZone.on("click", function (e) {
+    if ($(e.target).closest("#pickFileBtn, #fileInput").length) {
+      return;
     }
+    openFilePicker();
   });
 
   $dropZone.on("keydown", function (e) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      $fileInput.trigger("click");
+      openFilePicker();
     }
   });
 

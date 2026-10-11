@@ -84,6 +84,18 @@ body {
   font-weight: 600;
 }
 
+/* label styled as button */
+label.btn-accent {
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+label.btn-accent.disabled,
+label.btn-accent[aria-disabled="true"] {
+  pointer-events: none;
+  opacity: 0.65;
+}
+
 .form-select,
 .form-control,
 .btn-outline-light {

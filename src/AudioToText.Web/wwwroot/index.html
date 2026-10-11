@@ -27,8 +27,9 @@
         <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Trascina o scegli un file audio">
           <p class="mb-1 fw-semibold">Trascina qui il vocale</p>
           <p class="mb-3 small text-secondary">oppure clicca per scegliere (ogg, opus, m4a, mp3, wav, webm)</p>
-          <button type="button" id="pickFileBtn" class="btn btn-accent">Scegli file</button>
-          <input type="file" id="fileInput" class="d-none" accept="audio/*,.ogg,.opus,.m4a,.mp3,.wav,.webm,.mp4" />
+          <!-- label+for opens the native picker reliably (display:none + jQuery trigger does not) -->
+          <label for="fileInput" id="pickFileBtn" class="btn btn-accent">Scegli file</label>
+          <input type="file" id="fileInput" class="visually-hidden" accept="audio/*,.ogg,.opus,.m4a,.mp3,.wav,.webm,.mp4" />
         </div>
 
         <div class="controls row g-3 align-items-end mt-3">
