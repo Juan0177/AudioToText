@@ -159,23 +159,51 @@ label.btn-accent[aria-disabled="true"] {
 }
 
 .tldr-panel {
-  border-top: 1px solid var(--line);
-  padding-top: 1rem;
+  margin-top: 1.25rem;
+  padding: 1.1rem 1.15rem 1.2rem;
+  border: 1px solid rgba(47, 143, 122, 0.35);
+  border-radius: 0.85rem;
+  background: rgba(7, 16, 20, 0.55);
+}
+
+.tldr-panel h3 {
+  color: var(--foam);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.tldr-panel #tldrMethodLabel {
+  color: #c5d0cb;
+  font-size: 0.9rem;
 }
 
 .tldr-body {
-  color: var(--ink);
-  line-height: 1.55;
-  font-size: 0.98rem;
+  color: var(--foam);
+  line-height: 1.65;
+  font-size: 1.05rem;
+  min-height: 4.5rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+}
+
+.tldr-body p {
+  margin: 0;
+  color: var(--foam);
 }
 
 .tldr-body ul {
-  margin: 0.35rem 0 0;
-  padding-left: 1.15rem;
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--foam);
+}
+
+.tldr-body li {
+  color: var(--foam);
 }
 
 .tldr-body li + li {
-  margin-top: 0.25rem;
+  margin-top: 0.45rem;
 }
 
 .btn.is-recording {
