@@ -126,6 +126,22 @@ label.btn-accent[aria-disabled="true"] {
 .status.is-error { color: var(--accent-2); }
 .status.is-busy { color: var(--foam); }
 
+.nav-pills-custom {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.nav-pills-custom .btn.active {
+  background: rgba(47, 143, 122, 0.35);
+  border-color: var(--accent);
+  color: var(--foam);
+}
+
+.settings-row .badge {
+  font-weight: 600;
+}
+
 .btn.is-recording {
   background: rgba(212, 163, 92, 0.2);
   border-color: var(--accent-2);

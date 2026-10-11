@@ -15,7 +15,7 @@ Vedi [`docs/architecture.md`](docs/architecture.md).
 ## Requisiti (Windows)
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- Account Cloudflare + API token con permesso **Workers AI** (produzione)
+- Account Cloudflare + API token con permesso **Workers AI**
 
 ## Avvio locale
 
@@ -29,22 +29,12 @@ dotnet run --project src\AudioToText.Web
 
 Apri http://localhost:5088 (profilo `http`).
 
-In **Development** il provider è `Fake` (`appsettings.Development.json`): l’UI funziona senza token.
+### Credenziali Cloudflare (Impostazioni)
 
-### Cloudflare (produzione / STT reale)
+Nella UI apri **Impostazioni** e inserisci Account ID + API Token.  
+I valori sono salvati in `src/AudioToText.Web/appsettings.Local.json` (**gitignored**), mai restituiti dall’API dopo il salvataggio (solo stato Configurato / Non configurato). Valgono dalla richiesta successiva senza redeploy.
 
-```powershell
-dotnet user-secrets set "Cloudflare:AccountId" "<account_id>" --project src\AudioToText.Web
-dotnet user-secrets set "Cloudflare:ApiToken" "<api_token>" --project src\AudioToText.Web
-```
-
-Poi in `appsettings.Development.json` (o env):
-
-```json
-"Transcription": { "Provider": "CloudflareRest" }
-```
-
-Env vars equivalenti: `Cloudflare__AccountId`, `Cloudflare__ApiToken`, `Transcription__Provider`.
+In alternativa (CLI / CI): env `Cloudflare__AccountId`, `Cloudflare__ApiToken`, oppure `dotnet user-secrets`.
 
 ### Worker edge (opzionale)
 

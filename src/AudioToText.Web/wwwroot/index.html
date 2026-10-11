@@ -15,57 +15,101 @@
   <div class="page">
     <main class="container py-4 py-md-5">
       <header class="mb-4 mb-md-5">
-        <p class="brand mb-2">AudioToText</p>
-        <h1 class="tagline">Trascrivi i vocali di WhatsApp</h1>
-        <p class="lead-muted mb-0">
-          Carica un audio o registra dal microfono. La trascrizione gira su Cloudflare Workers AI (Whisper).
-        </p>
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+          <div>
+            <p class="brand mb-2">AudioToText</p>
+            <h1 class="tagline">Trascrivi i vocali di WhatsApp</h1>
+            <p class="lead-muted mb-0">
+              Carica un audio o registra dal microfono. La trascrizione gira su Cloudflare Workers AI (Whisper).
+            </p>
+          </div>
+          <nav class="nav-pills-custom" aria-label="Sezioni">
+            <button type="button" class="btn btn-sm btn-outline-light active" data-section="transcribe" id="navTranscribe">Trascrivi</button>
+            <button type="button" class="btn btn-sm btn-outline-light" data-section="settings" id="navSettings">Impostazioni</button>
+          </nav>
+        </div>
       </header>
 
-      <section class="panel" aria-labelledby="upload-heading">
-        <h2 id="upload-heading" class="visually-hidden">Carica audio</h2>
-        <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Trascina o scegli un file audio">
-          <p class="mb-1 fw-semibold">Trascina qui il vocale</p>
-          <p class="mb-3 small text-secondary">oppure clicca per scegliere (ogg, opus, m4a, mp3, wav, webm)</p>
-          <!-- label+for opens the native picker reliably (display:none + jQuery trigger does not) -->
-          <label for="fileInput" id="pickFileBtn" class="btn btn-accent">Scegli file</label>
-          <input type="file" id="fileInput" class="visually-hidden" accept="audio/*,.ogg,.opus,.m4a,.mp3,.wav,.webm,.mp4" />
-        </div>
+      <div id="sectionTranscribe">
+        <section class="panel" aria-labelledby="upload-heading">
+          <h2 id="upload-heading" class="visually-hidden">Carica audio</h2>
+          <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Trascina o scegli un file audio">
+            <p class="mb-1 fw-semibold">Trascina qui il vocale</p>
+            <p class="mb-3 small text-secondary">oppure clicca per scegliere (ogg, opus, m4a, mp3, wav, webm)</p>
+            <label for="fileInput" id="pickFileBtn" class="btn btn-accent">Scegli file</label>
+            <input type="file" id="fileInput" class="visually-hidden" accept="audio/*,.ogg,.opus,.m4a,.mp3,.wav,.webm,.mp4" />
+          </div>
 
-        <div class="controls row g-3 align-items-end mt-3">
-          <div class="col-sm-6 col-md-4">
-            <label for="language" class="form-label">Lingua</label>
-            <select id="language" class="form-select">
-              <option value="italian" selected>Italiano</option>
-              <option value="auto">Rileva automatico</option>
-              <option value="en">English</option>
-            </select>
+          <div class="controls row g-3 align-items-end mt-3">
+            <div class="col-sm-6 col-md-4">
+              <label for="language" class="form-label">Lingua</label>
+              <select id="language" class="form-select">
+                <option value="italian" selected>Italiano</option>
+                <option value="auto">Rileva automatico</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+            <div class="col-sm-6 col-md-4">
+              <label class="form-label d-block">Microfono</label>
+              <button type="button" id="recordBtn" class="btn btn-outline-light w-100">Registra</button>
+            </div>
+            <div class="col-12 col-md-4">
+              <p id="status" class="status mb-0" role="status" aria-live="polite">Pronto.</p>
+            </div>
           </div>
-          <div class="col-sm-6 col-md-4">
-            <label class="form-label d-block">Microfono</label>
-            <button type="button" id="recordBtn" class="btn btn-outline-light w-100">Registra</button>
-          </div>
-          <div class="col-12 col-md-4">
-            <p id="status" class="status mb-0" role="status" aria-live="polite">Pronto.</p>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="panel mt-4" aria-labelledby="result-heading">
-        <div class="d-flex justify-content-between align-items-center mb-2 gap-2 flex-wrap">
-          <h2 id="result-heading" class="h5 mb-0">Trascrizione</h2>
-          <div class="btn-group">
-            <button type="button" id="copyBtn" class="btn btn-sm btn-outline-light" disabled>Copia</button>
-            <button type="button" id="downloadBtn" class="btn btn-sm btn-outline-light" disabled>Scarica .txt</button>
-            <button type="button" id="clearBtn" class="btn btn-sm btn-outline-light" disabled>Pulisci</button>
+        <section class="panel mt-4" aria-labelledby="result-heading">
+          <div class="d-flex justify-content-between align-items-center mb-2 gap-2 flex-wrap">
+            <h2 id="result-heading" class="h5 mb-0">Trascrizione</h2>
+            <div class="btn-group">
+              <button type="button" id="copyBtn" class="btn btn-sm btn-outline-light" disabled>Copia</button>
+              <button type="button" id="downloadBtn" class="btn btn-sm btn-outline-light" disabled>Scarica .txt</button>
+              <button type="button" id="clearBtn" class="btn btn-sm btn-outline-light" disabled>Pulisci</button>
+            </div>
           </div>
-        </div>
-        <textarea id="transcript" class="form-control transcript" rows="10" readonly placeholder="Il testo apparirà qui…"></textarea>
-      </section>
+          <textarea id="transcript" class="form-control transcript" rows="10" readonly placeholder="Il testo apparirà qui…"></textarea>
+        </section>
+      </div>
+
+      <div id="sectionSettings" class="d-none">
+        <section class="panel" aria-labelledby="settings-heading">
+          <h2 id="settings-heading" class="h5 mb-2">Impostazioni Cloudflare</h2>
+          <p class="small text-secondary mb-4">
+            I valori restano solo su questo PC (<code>appsettings.Local.json</code>, fuori da git).
+            Dopo il salvataggio i campi si svuotano: non vengono mai mostrati di nuovo.
+          </p>
+
+          <div class="settings-row mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+              <label class="form-label mb-0" for="accountIdInput">Account ID</label>
+              <span id="accountIdStatus" class="badge text-bg-secondary">…</span>
+            </div>
+            <div class="input-group">
+              <input type="password" class="form-control" id="accountIdInput" autocomplete="off" placeholder="Nuovo Account ID" spellcheck="false" />
+              <button type="button" class="btn btn-accent" id="saveAccountIdBtn">Aggiorna</button>
+              <button type="button" class="btn btn-outline-light" id="clearAccountIdBtn">Rimuovi</button>
+            </div>
+          </div>
+
+          <div class="settings-row">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+              <label class="form-label mb-0" for="apiTokenInput">API Token</label>
+              <span id="apiTokenStatus" class="badge text-bg-secondary">…</span>
+            </div>
+            <div class="input-group">
+              <input type="password" class="form-control" id="apiTokenInput" autocomplete="off" placeholder="Nuovo API Token" spellcheck="false" />
+              <button type="button" class="btn btn-accent" id="saveApiTokenBtn">Aggiorna</button>
+              <button type="button" class="btn btn-outline-light" id="clearApiTokenBtn">Rimuovi</button>
+            </div>
+          </div>
+
+          <p id="settingsMessage" class="status mt-3 mb-0" role="status" aria-live="polite"></p>
+        </section>
+      </div>
 
       <footer class="mt-4 small text-secondary">
-        Richiede <code>Cloudflare:AccountId</code> e <code>Cloudflare:ApiToken</code> in produzione.
-        In Development il provider <code>Fake</code> consente di provare l’UI senza token.
+        Configura Account ID e API Token in <strong>Impostazioni</strong> (salvati in locale, mai mostrati dopo il salvataggio).
       </footer>
     </main>
   </div>

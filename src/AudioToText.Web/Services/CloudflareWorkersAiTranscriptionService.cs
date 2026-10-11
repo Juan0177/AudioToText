@@ -14,16 +14,19 @@ public sealed class CloudflareWorkersAiTranscriptionService : ITranscriptionServ
     };
 
     private readonly HttpClient _httpClient;
-    private readonly CloudflareOptions _options;
+    private readonly CloudflareCredentialStore _credentials;
+    private readonly IOptionsMonitor<CloudflareOptions> _options;
     private readonly ILogger<CloudflareWorkersAiTranscriptionService> _logger;
 
     public CloudflareWorkersAiTranscriptionService(
         HttpClient httpClient,
-        IOptions<CloudflareOptions> options,
+        CloudflareCredentialStore credentials,
+        IOptionsMonitor<CloudflareOptions> options,
         ILogger<CloudflareWorkersAiTranscriptionService> logger)
     {
         _httpClient = httpClient;
-        _options = options.Value;
+        _credentials = credentials;
+        _options = options;
         _logger = logger;
     }
 
@@ -34,11 +37,13 @@ public sealed class CloudflareWorkersAiTranscriptionService : ITranscriptionServ
         string? language,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(_options.AccountId) ||
-            string.IsNullOrWhiteSpace(_options.ApiToken))
+        var (accountId, apiToken) = _credentials.GetCredentials();
+        var options = _options.CurrentValue;
+
+        if (string.IsNullOrWhiteSpace(accountId) || string.IsNullOrWhiteSpace(apiToken))
         {
             throw new InvalidOperationException(
-                "Cloudflare AccountId/ApiToken non configurati. Imposta i secret o usa Transcription:Provider=Fake.");
+                "Cloudflare Account ID / API Token non configurati. Apri Impostazioni e salvali localmente.");
         }
 
         await using var memory = new MemoryStream();
@@ -49,12 +54,11 @@ public sealed class CloudflareWorkersAiTranscriptionService : ITranscriptionServ
             throw new InvalidOperationException("File audio vuoto.");
         }
 
-        var url = BuildRunUrl(_options.BaseUrl, _options.AccountId, _options.Model);
+        var url = BuildRunUrl(options.BaseUrl, accountId, options.Model);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiToken);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiToken);
 
-        // Binary body is the documented ASR input for @cf/openai/whisper.
         var mediaType = string.IsNullOrWhiteSpace(contentType)
             ? "application/octet-stream"
             : contentType;

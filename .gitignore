@@ -25,7 +25,10 @@ obj/
 TestResults/
 *.DotSettings.user
 appsettings.*.local.json
+appsettings.Local.json
+*.Local.json
 secrets.json
+cloudflare.local.json
 
 # Editor
 .vscode/*

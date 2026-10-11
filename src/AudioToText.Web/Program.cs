@@ -3,6 +3,9 @@ using AudioToText.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var localSettingsPath = Path.Combine(builder.Environment.ContentRootPath, CloudflareCredentialStore.DefaultFileName);
+builder.Configuration.AddJsonFile(localSettingsPath, optional: true, reloadOnChange: true);
+
 builder.Services.Configure<CloudflareOptions>(
     builder.Configuration.GetSection(CloudflareOptions.SectionName));
 builder.Services.Configure<TranscriptionOptions>(
@@ -10,6 +13,7 @@ builder.Services.Configure<TranscriptionOptions>(
 
 builder.Services.AddControllers();
 builder.Services.AddSingleton<AudioUploadValidator>();
+builder.Services.AddSingleton<CloudflareCredentialStore>();
 
 var provider = builder.Configuration.GetValue<string>("Transcription:Provider") ?? "CloudflareRest";
 if (string.Equals(provider, "Fake", StringComparison.OrdinalIgnoreCase))
