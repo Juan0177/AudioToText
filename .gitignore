@@ -39,3 +39,5 @@ Thumbs.db
 # Wrangler
 .wrangler/
 .dev.vars
+
+.playwright-mcp/

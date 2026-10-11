@@ -19,6 +19,8 @@ Vedi [`docs/architecture.md`](docs/architecture.md).
 
 ## Avvio locale
 
+Shortcut: `.\run-local.ps1` (checkout `main`, pull, then `dotnet run`).
+
 ```powershell
 cd D:\dev\AudioToText
 dotnet restore
