@@ -95,7 +95,7 @@ public sealed class CloudflareWorkersAiTranscriptionService : ITranscriptionServ
     /// Workers AI model ids are path segments (e.g. @cf/openai/whisper).
     /// Do not EscapeDataString the whole model — that encodes '/' and breaks CF routing.
     /// </summary>
-    internal static string BuildRunUrl(string baseUrl, string accountId, string model)
+    public static string BuildRunUrl(string baseUrl, string accountId, string model)
     {
         var modelPath = model.Trim().TrimStart('/');
         return $"{baseUrl.TrimEnd('/')}/accounts/{accountId}/ai/run/{modelPath}";
