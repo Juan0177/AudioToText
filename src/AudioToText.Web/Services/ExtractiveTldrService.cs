@@ -88,7 +88,10 @@ public sealed class ExtractiveTldrService : ITldrService
         }
 
         var scores = ScoreSentences(sentences);
-        var targetCount = Math.Clamp(sentences.Count / 4, 2, 4);
+        // Prefer 3–4 sentences for typical WhatsApp vocals; keep short texts tighter.
+        var targetCount = sentences.Count <= 5
+            ? 2
+            : Math.Clamp((int)Math.Ceiling(sentences.Count / 3.0), 3, 4);
         var selectedIndexes = scores
             .Select((score, index) => (score, index))
             .OrderByDescending(x => x.score)
@@ -209,12 +212,12 @@ public sealed class ExtractiveTldrService : ITldrService
                 score += 1.0 + Math.Log(1 + docFreq.GetValueOrDefault(token));
             }
 
-            // Prefer slightly earlier sentences (WhatsApp vocals often front-load intent).
-            var positionBoost = 1.0 + (0.15 * (1.0 - (double)i / Math.Max(1, sentences.Count - 1)));
+            // Mild front-load bias (WhatsApp vocals often state intent early).
+            var positionBoost = 1.0 + (0.08 * (1.0 - (double)i / Math.Max(1, sentences.Count - 1)));
             // Mild length preference: avoid tiny fragments and mega-sentences.
             var len = sentences[i].Length;
-            var lengthFactor = len < 40 ? 0.6 : len > 320 ? 0.75 : 1.0;
-            scores[i] = (score / tokens.Length) * positionBoost * lengthFactor;
+            var lengthFactor = len < 40 ? 0.55 : len > 320 ? 0.75 : 1.0;
+            scores[i] = (score / Math.Sqrt(tokens.Length)) * positionBoost * lengthFactor;
         }
 
         return scores;
