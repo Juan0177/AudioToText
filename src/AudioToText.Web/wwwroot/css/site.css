@@ -143,11 +143,11 @@ body {
 }
 
 .hero {
-  min-height: min(78vh, 40rem);
+  min-height: calc(100vh - 6.5rem);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 0 0 var(--space-2);
+  padding: 0 0 var(--space-3);
   animation: rise 0.65s ease both;
 }
 
