@@ -49,8 +49,7 @@ public sealed class CloudflareWorkersAiTranscriptionService : ITranscriptionServ
             throw new InvalidOperationException("File audio vuoto.");
         }
 
-        var modelSegment = Uri.EscapeDataString(_options.Model);
-        var url = $"{_options.BaseUrl.TrimEnd('/')}/accounts/{_options.AccountId}/ai/run/{modelSegment}";
+        var url = BuildRunUrl(_options.BaseUrl, _options.AccountId, _options.Model);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiToken);
@@ -90,6 +89,16 @@ public sealed class CloudflareWorkersAiTranscriptionService : ITranscriptionServ
         }
 
         return new TranscriptionResult(text, language, envelope.Result.WordCount);
+    }
+
+    /// <summary>
+    /// Workers AI model ids are path segments (e.g. @cf/openai/whisper).
+    /// Do not EscapeDataString the whole model — that encodes '/' and breaks CF routing.
+    /// </summary>
+    internal static string BuildRunUrl(string baseUrl, string accountId, string model)
+    {
+        var modelPath = model.Trim().TrimStart('/');
+        return $"{baseUrl.TrimEnd('/')}/accounts/{accountId}/ai/run/{modelPath}";
     }
 
     private static string Truncate(string value, int max) =>
