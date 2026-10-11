@@ -121,6 +121,10 @@
         setTranscript(data.text || "");
         renderTldr(data.tldr);
         setStatus("Trascrizione completata.", "ok");
+        $dropZone.addClass("is-success");
+        setTimeout(function () {
+          $dropZone.removeClass("is-success");
+        }, 900);
       })
       .fail(function (xhr) {
         var message =
@@ -865,8 +869,8 @@
     var isSettings = name === "settings";
     $("#sectionTranscribe").toggleClass("d-none", isSettings);
     $("#sectionSettings").toggleClass("d-none", !isSettings);
-    $("#navTranscribe").toggleClass("active", !isSettings);
-    $("#navSettings").toggleClass("active", isSettings);
+    $("#navTranscribe").toggleClass("is-active active", !isSettings);
+    $("#navSettings").toggleClass("is-active active", isSettings);
     if (isSettings) {
       if (!$(".settings-panel.is-active").length) {
         showSettingsPanel("provider");
