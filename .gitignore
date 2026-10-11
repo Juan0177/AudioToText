@@ -44,3 +44,7 @@ Thumbs.db
 .dev.vars
 
 .playwright-mcp/
+
+# Local Whisper models
+models/
+**/models/whisper/

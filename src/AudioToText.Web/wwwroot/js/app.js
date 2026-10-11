@@ -207,12 +207,14 @@
     toggleRecording();
   });
 
-  // —— Impostazioni Cloudflare (status only; never echo secrets) ——
+  // —— Impostazioni (provider + locale + Cloudflare secrets) ——
   var $settingsMessage = $("#settingsMessage");
   var $accountIdStatus = $("#accountIdStatus");
   var $apiTokenStatus = $("#apiTokenStatus");
   var $accountIdInput = $("#accountIdInput");
   var $apiTokenInput = $("#apiTokenInput");
+  var $providerSelect = $("#providerSelect");
+  var $localModelSelect = $("#localModelSelect");
 
   function setSettingsMessage(message, kind) {
     $settingsMessage
@@ -221,16 +223,43 @@
       .toggleClass("is-busy", kind === "busy");
   }
 
-  function renderStatusBadge($el, configured) {
+  function renderStatusBadge($el, configured, readyText, missingText) {
     $el
-      .text(configured ? "Configurato" : "Non configurato")
+      .text(configured ? readyText || "Configurato" : missingText || "Non configurato")
       .removeClass("text-bg-secondary text-bg-success text-bg-warning")
       .addClass(configured ? "text-bg-success" : "text-bg-warning");
   }
 
-  function applySettingsStatus(data) {
-    renderStatusBadge($accountIdStatus, Boolean(data.accountIdConfigured));
-    renderStatusBadge($apiTokenStatus, Boolean(data.apiTokenConfigured));
+  function applyFullSettings(data) {
+    var provider = data.provider || "CloudflareRest";
+    $providerSelect.val(provider === "Local" ? "Local" : "CloudflareRest");
+    $("#providerStatus")
+      .text(provider === "Local" ? "Locale" : "Cloudflare")
+      .removeClass("text-bg-secondary text-bg-success text-bg-warning")
+      .addClass("text-bg-success");
+
+    if (data.localModel) {
+      $localModelSelect.val(data.localModel);
+    }
+
+    var cf = data.cloudflare || data;
+    renderStatusBadge($accountIdStatus, Boolean(cf.accountIdConfigured));
+    renderStatusBadge($apiTokenStatus, Boolean(cf.apiTokenConfigured));
+
+    var local = data.local || {};
+    renderStatusBadge(
+      $("#localModelStatus"),
+      Boolean(local.modelReady),
+      "Modello pronto",
+      "Da scaricare"
+    );
+    $("#localRuntimeLabel").text(local.runtime || "…");
+    $("#localFfmpegLabel").text(local.ffmpegAvailable ? "disponibile" : "non trovato (serve per ogg/opus)");
+    $("#localModelsPath").text(local.modelsDirectory || "…");
+    $("#localMessageLine").text(local.message || "");
+    if (local.hardwareHint) {
+      $("#localHardwareHint").text(local.hardwareHint);
+    }
   }
 
   function assertNoSecretsLeaked(payloadText, candidates) {
@@ -244,12 +273,12 @@
 
   function loadSettingsStatus() {
     return $.ajax({
-      url: "/api/settings/cloudflare",
+      url: "/api/settings",
       method: "GET",
       dataType: "json"
     })
       .done(function (data, _status, xhr) {
-        applySettingsStatus(data);
+        applyFullSettings(data);
         assertNoSecretsLeaked(xhr.responseText, [
           $accountIdInput.val(),
           $apiTokenInput.val()
@@ -260,7 +289,7 @@
       });
   }
 
-  function saveField(body, $input, successMessage) {
+  function saveCloudflareField(body, $input, successMessage) {
     var typed = $input.val();
     setSettingsMessage("Salvataggio…", "busy");
     $.ajax({
@@ -272,9 +301,11 @@
     })
       .done(function (data, _status, xhr) {
         $input.val("");
-        applySettingsStatus(data);
+        renderStatusBadge($accountIdStatus, Boolean(data.accountIdConfigured));
+        renderStatusBadge($apiTokenStatus, Boolean(data.apiTokenConfigured));
         assertNoSecretsLeaked(xhr.responseText, [typed]);
         setSettingsMessage(successMessage, "ok");
+        loadSettingsStatus();
       })
       .fail(function (xhr) {
         var message =
@@ -284,13 +315,82 @@
       });
   }
 
+  $("#saveProviderBtn").on("click", function () {
+    setSettingsMessage("Salvataggio provider…", "busy");
+    $.ajax({
+      url: "/api/settings/provider",
+      method: "PUT",
+      contentType: "application/json",
+      data: JSON.stringify({ provider: $providerSelect.val() }),
+      dataType: "json"
+    })
+      .done(function (data) {
+        applyFullSettings(data);
+        setSettingsMessage("Provider aggiornato.", "ok");
+      })
+      .fail(function (xhr) {
+        setSettingsMessage(
+          (xhr.responseJSON && xhr.responseJSON.error) || "Salvataggio provider non riuscito.",
+          "error"
+        );
+      });
+  });
+
+  $("#saveLocalModelBtn").on("click", function () {
+    setSettingsMessage("Salvataggio modello…", "busy");
+    $.ajax({
+      url: "/api/settings/local-model",
+      method: "PUT",
+      contentType: "application/json",
+      data: JSON.stringify({ model: $localModelSelect.val() }),
+      dataType: "json"
+    })
+      .done(function (data) {
+        applyFullSettings(data);
+        setSettingsMessage("Modello locale selezionato.", "ok");
+      })
+      .fail(function (xhr) {
+        setSettingsMessage(
+          (xhr.responseJSON && xhr.responseJSON.error) || "Salvataggio modello non riuscito.",
+          "error"
+        );
+      });
+  });
+
+  $("#downloadModelBtn").on("click", function () {
+    setSettingsMessage("Download modello in corso (può richiedere alcuni minuti)…", "busy");
+    $("#downloadModelBtn").prop("disabled", true);
+    $.ajax({
+      url: "/api/settings/local/download-model",
+      method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({ model: $localModelSelect.val() }),
+      dataType: "json",
+      timeout: 30 * 60 * 1000
+    })
+      .done(function (data) {
+        applyFullSettings(data);
+        setSettingsMessage("Modello scaricato.", "ok");
+      })
+      .fail(function (xhr) {
+        setSettingsMessage(
+          (xhr.responseJSON && xhr.responseJSON.error) || "Download modello non riuscito.",
+          "error"
+        );
+        loadSettingsStatus();
+      })
+      .always(function () {
+        $("#downloadModelBtn").prop("disabled", false);
+      });
+  });
+
   $("#saveAccountIdBtn").on("click", function () {
     var value = ($accountIdInput.val() || "").trim();
     if (!value) {
       setSettingsMessage("Inserisci un Account ID.", "error");
       return;
     }
-    saveField({ accountId: value }, $accountIdInput, "Account ID aggiornato.");
+    saveCloudflareField({ accountId: value }, $accountIdInput, "Account ID aggiornato.");
   });
 
   $("#saveApiTokenBtn").on("click", function () {
@@ -299,16 +399,16 @@
       setSettingsMessage("Inserisci un API Token.", "error");
       return;
     }
-    saveField({ apiToken: value }, $apiTokenInput, "API Token aggiornato.");
+    saveCloudflareField({ apiToken: value }, $apiTokenInput, "API Token aggiornato.");
   });
 
   $("#clearAccountIdBtn").on("click", function () {
     setSettingsMessage("Rimozione…", "busy");
     $.ajax({ url: "/api/settings/cloudflare/account-id", method: "DELETE", dataType: "json" })
-      .done(function (data) {
+      .done(function () {
         $accountIdInput.val("");
-        applySettingsStatus(data);
         setSettingsMessage("Account ID rimosso.", "ok");
+        loadSettingsStatus();
       })
       .fail(function () {
         setSettingsMessage("Rimozione Account ID non riuscita.", "error");
@@ -318,10 +418,10 @@
   $("#clearApiTokenBtn").on("click", function () {
     setSettingsMessage("Rimozione…", "busy");
     $.ajax({ url: "/api/settings/cloudflare/api-token", method: "DELETE", dataType: "json" })
-      .done(function (data) {
+      .done(function () {
         $apiTokenInput.val("");
-        applySettingsStatus(data);
         setSettingsMessage("API Token rimosso.", "ok");
+        loadSettingsStatus();
       })
       .fail(function () {
         setSettingsMessage("Rimozione API Token non riuscita.", "error");

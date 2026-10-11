@@ -1,48 +1,49 @@
 # AudioToText
 
-Trascrizione audio (vocali WhatsApp) con **ASP.NET Core 8** + **Cloudflare Workers AI Whisper**.
+Trascrizione audio (vocali WhatsApp) con **ASP.NET Core 8**:
 
-UI: Bootstrap 5 + jQuery. Backend valida l’upload e chiama Workers AI.
+- **Cloudflare** Workers AI Whisper, oppure
+- **Locale** Whisper.net (CUDA se disponibile, altrimenti CPU)
+
+UI: Bootstrap 5 + jQuery.
 
 ## Architettura
 
 Vedi [`docs/architecture.md`](docs/architecture.md).
 
-- `src/AudioToText.Web` — app host + API `POST /api/transcriptions`
-- `cloudflare/transcribe-worker` — Worker opzionale con binding `AI`
-- `legacy/voce-browser` — vecchia SPA Whisper-in-browser
-
 ## Requisiti (Windows)
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- Account Cloudflare + API token con permesso **Workers AI**
+- **Locale / WhatsApp ogg·opus:** [ffmpeg](https://ffmpeg.org/download.html) nel `PATH` (o `FFMPEG_PATH`)
+- **Locale / GPU:** driver NVIDIA + CUDA (Whisper.net.Runtime.Cuda). Senza CUDA → CPU automatico
+- **Cloudflare:** Account ID + API Token Workers AI (opzionale se usi solo Locale)
 
-## Avvio locale
-
-Shortcut: `.\run-local.ps1` (checkout `main`, pull, then `dotnet run`).
+## Avvio
 
 ```powershell
 cd D:\dev\AudioToText
-dotnet restore
-dotnet run --project src\AudioToText.Web
+.\run-local.ps1
 ```
 
-Apri http://localhost:5088 (profilo `http`).
+Apri http://localhost:5088 → **Impostazioni**.
 
-### Credenziali Cloudflare (Impostazioni)
+### Modalità Locale
 
-Nella UI apri **Impostazioni** e inserisci Account ID + API Token.  
-I valori sono salvati in `src/AudioToText.Web/appsettings.Local.json` (**gitignored**), mai restituiti dall’API dopo il salvataggio (solo stato Configurato / Non configurato). Valgono dalla richiesta successiva senza redeploy.
+1. Provider → **Locale (Whisper)** → Salva provider  
+2. Scegli modello (`tiny` / `base` / `small` / `medium`) → Salva modello  
+3. **Scarica modello** (prima volta; file in `src/AudioToText.Web/models/whisper/`, gitignored)  
+4. Torna a **Trascrivi**
 
-In alternativa (CLI / CI): env `Cloudflare__AccountId`, `Cloudflare__ApiToken`, oppure `dotnet user-secrets`.
+Hint hardware:
 
-### Worker edge (opzionale)
+| GPU | Consiglio |
+|-----|-----------|
+| GTX 1050 Ti (~4GB) | `tiny` o `base` (CPU ok se CUDA stretta) |
+| RTX 5070 | `small` su CUDA; `medium` se VRAM basta |
 
-```powershell
-cd cloudflare\transcribe-worker
-npm install
-npx wrangler deploy
-```
+### Modalità Cloudflare
+
+In Impostazioni inserisci Account ID + API Token (mascherati; mai riletti dall’API). Salvati in `appsettings.Local.json` (gitignored).
 
 ## Test
 
@@ -52,6 +53,6 @@ dotnet test
 
 ## Note
 
-- Formati: ogg, opus, m4a, mp3, wav, webm, …
+- Formati: ogg, opus, m4a, mp3, wav, webm, … (ogg/opus → ffmpeg)
 - Max upload default: 25 MB
-- Modello default: `@cf/openai/whisper`
+- Modelli Whisper **non** vanno in git

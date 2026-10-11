@@ -14,13 +14,13 @@ public sealed class CloudflareWorkersAiTranscriptionService : ITranscriptionServ
     };
 
     private readonly HttpClient _httpClient;
-    private readonly CloudflareCredentialStore _credentials;
+    private readonly AppLocalSettingsStore _credentials;
     private readonly IOptionsMonitor<CloudflareOptions> _options;
     private readonly ILogger<CloudflareWorkersAiTranscriptionService> _logger;
 
     public CloudflareWorkersAiTranscriptionService(
         HttpClient httpClient,
-        CloudflareCredentialStore credentials,
+        AppLocalSettingsStore credentials,
         IOptionsMonitor<CloudflareOptions> options,
         ILogger<CloudflareWorkersAiTranscriptionService> logger)
     {

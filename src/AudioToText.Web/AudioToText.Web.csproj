@@ -8,4 +8,11 @@
     <UserSecretsId>audiototext-web-7f9c</UserSecretsId>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="Whisper.net" Version="1.9.1" />
+    <PackageReference Include="Whisper.net.Runtime" Version="1.9.1" />
+    <PackageReference Include="Whisper.net.Runtime.Cuda" Version="1.9.1" />
+  </ItemGroup>
+
 </Project>
