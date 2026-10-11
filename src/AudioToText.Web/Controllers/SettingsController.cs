@@ -10,11 +10,16 @@ public sealed class SettingsController : ControllerBase
 {
     private readonly AppLocalSettingsStore _store;
     private readonly ILocalWhisperRuntime _localRuntime;
+    private readonly IFfmpegToolService _ffmpeg;
 
-    public SettingsController(AppLocalSettingsStore store, ILocalWhisperRuntime localRuntime)
+    public SettingsController(
+        AppLocalSettingsStore store,
+        ILocalWhisperRuntime localRuntime,
+        IFfmpegToolService ffmpeg)
     {
         _store = store;
         _localRuntime = localRuntime;
+        _ffmpeg = ffmpeg;
     }
 
     [HttpGet]
@@ -130,8 +135,77 @@ public sealed class SettingsController : ControllerBase
         try
         {
             await _store.SetLocalModelAsync(model, cancellationToken);
-            await _localRuntime.DownloadModelAsync(model, cancellationToken);
-            return Ok(BuildStatus());
+            _localRuntime.StartDownload(model);
+            return Accepted(BuildStatus());
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpGet("local/download-progress")]
+    public ActionResult<LocalRuntimeStatusDto> DownloadProgress()
+    {
+        return Ok(_localRuntime.GetStatus(_store.GetLocalModel()));
+    }
+
+    [HttpPost("local/download-cancel")]
+    public ActionResult<AppSettingsStatusDto> CancelDownload()
+    {
+        _localRuntime.CancelDownload();
+        return Ok(BuildStatus());
+    }
+
+    [HttpGet("ffmpeg")]
+    public ActionResult<FfmpegStatusDto> GetFfmpegStatus()
+    {
+        return Ok(_ffmpeg.GetStatus());
+    }
+
+    [HttpPost("ffmpeg/download")]
+    public ActionResult<AppSettingsStatusDto> DownloadFfmpeg()
+    {
+        try
+        {
+            _ffmpeg.StartDownload();
+            return Accepted(BuildStatus());
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    [HttpGet("ffmpeg/download-progress")]
+    public ActionResult<FfmpegStatusDto> FfmpegDownloadProgress()
+    {
+        return Ok(_ffmpeg.GetStatus());
+    }
+
+    [HttpPost("ffmpeg/download-cancel")]
+    public ActionResult<AppSettingsStatusDto> CancelFfmpegDownload()
+    {
+        _ffmpeg.CancelDownload();
+        return Ok(BuildStatus());
+    }
+
+    /// <summary>
+    /// Prepares local environment: starts portable ffmpeg download if missing.
+    /// Model download remains a separate explicit action (large).
+    /// </summary>
+    [HttpPost("local/prepare")]
+    public ActionResult<AppSettingsStatusDto> PrepareLocal()
+    {
+        try
+        {
+            var status = _ffmpeg.GetStatus();
+            if (!status.Available && !status.IsDownloading)
+            {
+                _ffmpeg.StartDownload();
+            }
+
+            return Accepted(BuildStatus());
         }
         catch (InvalidOperationException ex)
         {
@@ -147,7 +221,8 @@ public sealed class SettingsController : ControllerBase
             Provider = _store.GetProvider(),
             LocalModel = model,
             Cloudflare = _store.GetCloudflareStatus(),
-            Local = _localRuntime.GetStatus(model)
+            Local = _localRuntime.GetStatus(model),
+            Ffmpeg = _ffmpeg.GetStatus()
         };
     }
 }

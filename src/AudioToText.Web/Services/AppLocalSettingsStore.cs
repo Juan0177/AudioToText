@@ -16,6 +16,7 @@ public sealed class AppSettingsStatusDto
     public string LocalModel { get; init; } = "base";
     public CloudflareSettingsStatus Cloudflare { get; init; } = new();
     public LocalRuntimeStatusDto Local { get; init; } = new();
+    public FfmpegStatusDto Ffmpeg { get; init; } = new();
 }
 
 public sealed class LocalRuntimeStatusDto
@@ -25,11 +26,19 @@ public sealed class LocalRuntimeStatusDto
     public string ModelsDirectory { get; init; } = string.Empty;
     public string Runtime { get; init; } = "Unknown";
     public bool FfmpegAvailable { get; init; }
+    public string FfmpegSource { get; init; } = "Mancante";
     public bool IsDownloading { get; init; }
     public int? DownloadPercent { get; init; }
+    public long BytesDownloaded { get; init; }
+    public long? BytesTotal { get; init; }
+    public string? DownloadingModel { get; init; }
     public string? Message { get; init; }
     public string HardwareHint { get; init; } =
         "GTX 1050 Ti: tiny/base (CPU ok). RTX 5070: small (CUDA) o medium se VRAM basta.";
+    public string FfmpegHint { get; init; } =
+        "ffmpeg richiesto per vocali WhatsApp (ogg/opus/m4a/webm). WAV/MP3 ok senza. Usa «Scarica ffmpeg» in Impostazioni.";
+    public IReadOnlyList<WhisperModelInfo> Models { get; init; } = WhisperModelCatalog.All;
+    public WhisperModelInfo? SelectedModelInfo { get; init; }
 }
 
 /// <summary>
@@ -53,6 +62,7 @@ public sealed class AppLocalSettingsStore
     private string _apiToken;
     private string _provider;
     private string _localModel;
+    private string _ffmpegPath;
 
     public AppLocalSettingsStore(
         IHostEnvironment environment,
@@ -74,6 +84,7 @@ public sealed class AppLocalSettingsStore
         _apiToken = cf.ApiToken?.Trim() ?? string.Empty;
         _provider = string.IsNullOrWhiteSpace(tx.Provider) ? TranscriptionProviders.CloudflareRest : tx.Provider.Trim();
         _localModel = NormalizeModel(tx.LocalModel);
+        _ffmpegPath = configuration["Tools:FfmpegPath"]?.Trim() ?? string.Empty;
 
         LoadFromFileOverlay();
     }
@@ -114,6 +125,31 @@ public sealed class AppLocalSettingsStore
         {
             return _localModel;
         }
+    }
+
+    public string? GetFfmpegPath()
+    {
+        lock (_gate)
+        {
+            return string.IsNullOrWhiteSpace(_ffmpegPath) ? null : _ffmpegPath;
+        }
+    }
+
+    public async Task SetFfmpegPathAsync(string path, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            throw new InvalidOperationException("Percorso ffmpeg non valido.");
+        }
+
+        var normalized = Path.GetFullPath(path.Trim());
+        lock (_gate)
+        {
+            _ffmpegPath = normalized;
+        }
+
+        await PersistAsync(cancellationToken);
+        _logger.LogInformation("ffmpeg path set to {Path}.", normalized);
     }
 
     public async Task SaveCloudflareAsync(string? accountId, string? apiToken, CancellationToken cancellationToken)
@@ -272,6 +308,12 @@ public sealed class AppLocalSettingsStore
                     _localModel = NormalizeModel(modelEl.GetString());
                 }
             }
+
+            if (doc.RootElement.TryGetProperty("Tools", out var tools) &&
+                tools.TryGetProperty("FfmpegPath", out var ffmpegEl))
+            {
+                _ffmpegPath = ffmpegEl.GetString()?.Trim() ?? string.Empty;
+            }
         }
         catch (Exception ex)
         {
@@ -285,12 +327,14 @@ public sealed class AppLocalSettingsStore
         string apiToken;
         string provider;
         string localModel;
+        string ffmpegPath;
         lock (_gate)
         {
             accountId = _accountId;
             apiToken = _apiToken;
             provider = _provider;
             localModel = _localModel;
+            ffmpegPath = _ffmpegPath;
         }
 
         JsonObject root;
@@ -327,6 +371,10 @@ public sealed class AppLocalSettingsStore
         transcription["Provider"] = provider;
         transcription["LocalModel"] = localModel;
         root["Transcription"] = transcription;
+
+        var tools = root["Tools"] as JsonObject ?? new JsonObject();
+        tools["FfmpegPath"] = ffmpegPath;
+        root["Tools"] = tools;
 
         var tmp = _filePath + ".tmp";
         await File.WriteAllTextAsync(tmp, root.ToJsonString(JsonWriteOptions), cancellationToken);

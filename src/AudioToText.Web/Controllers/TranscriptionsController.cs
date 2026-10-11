@@ -8,15 +8,18 @@ namespace AudioToText.Web.Controllers;
 public sealed class TranscriptionsController : ControllerBase
 {
     private readonly ITranscriptionService _transcriptionService;
+    private readonly ITldrService _tldr;
     private readonly AudioUploadValidator _validator;
     private readonly ILogger<TranscriptionsController> _logger;
 
     public TranscriptionsController(
         ITranscriptionService transcriptionService,
+        ITldrService tldr,
         AudioUploadValidator validator,
         ILogger<TranscriptionsController> logger)
     {
         _transcriptionService = transcriptionService;
+        _tldr = tldr;
         _validator = validator;
         _logger = logger;
     }
@@ -47,11 +50,23 @@ public sealed class TranscriptionsController : ControllerBase
                 normalizedLanguage,
                 cancellationToken);
 
+            // Never block transcription on TLDR failures.
+            TldrResult? tldr = null;
+            try
+            {
+                tldr = _tldr.Summarize(result.Text);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "TLDR generation failed; returning full text only.");
+            }
+
             return Ok(new
             {
                 text = result.Text,
                 language = result.DetectedLanguage,
-                wordCount = result.WordCount
+                wordCount = result.WordCount,
+                tldr
             });
         }
         catch (OperationCanceledException)
@@ -73,6 +88,26 @@ public sealed class TranscriptionsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Regenerates a local extractive TLDR from existing transcript text (offline).
+    /// </summary>
+    [HttpPost("tldr")]
+    public ActionResult<object> CreateTldr([FromBody] TldrRequest? request)
+    {
+        if (request is null || string.IsNullOrWhiteSpace(request.Text))
+        {
+            return BadRequest(new { error = "Testo mancante per il riassunto." });
+        }
+
+        if (request.Text.Length > 200_000)
+        {
+            return BadRequest(new { error = "Testo troppo lungo per il riassunto." });
+        }
+
+        var tldr = _tldr.Summarize(request.Text);
+        return Ok(new { tldr });
+    }
+
     private static string? NormalizeLanguage(string? language)
     {
         if (string.IsNullOrWhiteSpace(language) ||
@@ -90,4 +125,9 @@ public sealed class TranscriptionsController : ControllerBase
             _ => null
         };
     }
+}
+
+public sealed class TldrRequest
+{
+    public string? Text { get; set; }
 }

@@ -48,3 +48,7 @@ Thumbs.db
 # Local Whisper models
 models/
 **/models/whisper/
+
+# Portable ffmpeg (auto-downloaded)
+tools/ffmpeg/
+**/tools/ffmpeg/

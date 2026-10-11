@@ -6,18 +6,20 @@ namespace AudioToText.Web.Services;
 
 /// <summary>
 /// Converts uploaded audio to 16 kHz mono PCM WAV for Whisper.net.
-/// Prefers ffmpeg (WhatsApp ogg/opus); falls back to NAudio for WAV/MP3 where available.
+/// Prefers bundled/portable ffmpeg (WhatsApp ogg/opus); falls back to NAudio for WAV/MP3.
 /// </summary>
 public sealed class AudioPcmConverter
 {
+    private readonly IFfmpegToolService _ffmpeg;
     private readonly ILogger<AudioPcmConverter> _logger;
 
-    public AudioPcmConverter(ILogger<AudioPcmConverter> logger)
+    public AudioPcmConverter(IFfmpegToolService ffmpeg, ILogger<AudioPcmConverter> logger)
     {
+        _ffmpeg = ffmpeg;
         _logger = logger;
     }
 
-    public bool IsFfmpegAvailable() => ResolveFfmpegPath() is not null;
+    public bool IsFfmpegAvailable() => _ffmpeg.ResolveExecutablePath() is not null;
 
     public async Task<byte[]> ToWav16kMonoAsync(
         Stream input,
@@ -35,7 +37,7 @@ public sealed class AudioPcmConverter
                 await input.CopyToAsync(fs, cancellationToken);
             }
 
-            var ffmpeg = ResolveFfmpegPath();
+            var ffmpeg = _ffmpeg.ResolveExecutablePath();
             if (ffmpeg is not null)
             {
                 await RunFfmpegAsync(ffmpeg, tempIn, tempOut, cancellationToken);
@@ -49,7 +51,7 @@ public sealed class AudioPcmConverter
 
             throw new InvalidOperationException(
                 "ffmpeg non trovato. Serve per vocali WhatsApp (ogg/opus/m4a/webm). " +
-                "Installa ffmpeg e aggiungilo al PATH, oppure usa un file WAV/MP3.");
+                "Vai in Impostazioni → Scarica ffmpeg (setup automatico), oppure usa un file WAV/MP3.");
         }
         finally
         {
@@ -103,29 +105,8 @@ public sealed class AudioPcmConverter
         {
             _logger.LogWarning("ffmpeg failed (exit {Code}): {Err}", process.ExitCode, Truncate(stderr, 400));
             throw new InvalidOperationException(
-                "Conversione audio fallita (ffmpeg). Prova un altro formato o reinstalla ffmpeg.");
+                "Conversione audio fallita (ffmpeg). Prova un altro formato o reinstalla ffmpeg da Impostazioni.");
         }
-    }
-
-    private static string? ResolveFfmpegPath()
-    {
-        var fromEnv = Environment.GetEnvironmentVariable("FFMPEG_PATH");
-        if (!string.IsNullOrWhiteSpace(fromEnv) && File.Exists(fromEnv))
-        {
-            return fromEnv;
-        }
-
-        var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-        foreach (var dir in pathEnv.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
-        {
-            var candidate = Path.Combine(dir, OperatingSystem.IsWindows() ? "ffmpeg.exe" : "ffmpeg");
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        return null;
     }
 
     private static void TryDelete(string path)

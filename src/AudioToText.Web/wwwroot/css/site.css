@@ -142,6 +142,42 @@ label.btn-accent[aria-disabled="true"] {
   font-weight: 600;
 }
 
+.model-reqs {
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: rgba(7, 16, 20, 0.35);
+}
+
+.download-progress .progress {
+  height: 0.75rem;
+  background: rgba(7, 16, 20, 0.55);
+}
+
+.download-progress .progress-bar {
+  transition: width 0.25s ease;
+}
+
+.tldr-panel {
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.tldr-body {
+  color: var(--ink);
+  line-height: 1.55;
+  font-size: 0.98rem;
+}
+
+.tldr-body ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.tldr-body li + li {
+  margin-top: 0.25rem;
+}
+
 .btn.is-recording {
   background: rgba(212, 163, 92, 0.2);
   border-color: var(--accent-2);

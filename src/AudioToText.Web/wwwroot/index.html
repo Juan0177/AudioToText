@@ -69,6 +69,20 @@
             </div>
           </div>
           <textarea id="transcript" class="form-control transcript" rows="10" readonly placeholder="Il testo apparirà qui…"></textarea>
+
+          <div id="tldrPanel" class="tldr-panel d-none mt-3">
+            <div class="d-flex justify-content-between align-items-center mb-2 gap-2 flex-wrap">
+              <div>
+                <h3 class="h6 mb-0">Riassunto (TLDR)</h3>
+                <p class="small text-secondary mb-0" id="tldrMethodLabel">Riassunto locale (estrattivo)</p>
+              </div>
+              <div class="btn-group">
+                <button type="button" id="copyTldrBtn" class="btn btn-sm btn-outline-light">Copia TLDR</button>
+                <button type="button" id="regenTldrBtn" class="btn btn-sm btn-outline-light">Ricalcola</button>
+              </div>
+            </div>
+            <div id="tldrBody" class="tldr-body" aria-live="polite"></div>
+          </div>
         </section>
       </div>
 
@@ -101,6 +115,9 @@
           <p class="small text-secondary mb-3" id="localHardwareHint">
             GTX 1050 Ti (~4GB): preferisci <code>tiny</code>/<code>base</code> (CPU ok). RTX 5070: <code>small</code> su CUDA; <code>medium</code> se la VRAM basta.
           </p>
+          <p class="small text-secondary mb-3" id="localFfmpegHint">
+            ffmpeg richiesto per vocali WhatsApp (ogg/opus). WAV/MP3 ok senza.
+          </p>
           <div class="row g-3 align-items-end mb-3">
             <div class="col-md-4">
               <label for="localModelSelect" class="form-label">Modello</label>
@@ -118,15 +135,78 @@
               <button type="button" class="btn btn-outline-light w-100" id="downloadModelBtn">Scarica modello</button>
             </div>
             <div class="col-md-2">
+              <button type="button" class="btn btn-outline-light w-100 d-none" id="cancelDownloadBtn">Annulla</button>
               <span id="localModelStatus" class="badge text-bg-secondary">…</span>
             </div>
           </div>
+
+          <div id="modelReqsBox" class="model-reqs mb-3">
+            <div class="small fw-semibold mb-1">Requisiti modello selezionato</div>
+            <ul class="small text-secondary mb-0" id="modelReqsList">
+              <li id="reqSize">Download / disco: …</li>
+              <li id="reqRam">RAM: …</li>
+              <li id="reqVram">VRAM: …</li>
+              <li id="reqRecommend">Consiglio: …</li>
+            </ul>
+          </div>
+
+          <div id="downloadProgressWrap" class="download-progress d-none mb-3">
+            <div class="d-flex justify-content-between small text-secondary mb-1">
+              <span id="downloadProgressLabel">Download…</span>
+              <span id="downloadProgressPct">0%</span>
+            </div>
+            <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div id="downloadProgressBar" class="progress-bar bg-success" style="width: 0%"></div>
+            </div>
+          </div>
+
           <ul class="small text-secondary mb-0 list-unstyled" id="localRuntimeDetails">
             <li>Runtime: <span id="localRuntimeLabel">…</span></li>
             <li>ffmpeg: <span id="localFfmpegLabel">…</span></li>
             <li>Cartella modelli: <code id="localModelsPath">…</code></li>
             <li id="localMessageLine"></li>
           </ul>
+        </section>
+
+        <section class="panel mb-4" aria-labelledby="ffmpeg-heading">
+          <h2 id="ffmpeg-heading" class="h5 mb-2">Locale — ffmpeg</h2>
+          <p class="small text-secondary mb-3">
+            Serve per vocali WhatsApp (<code>ogg</code>/<code>opus</code>/<code>m4a</code>/<code>webm</code>).
+            WAV/MP3 possono funzionare senza. Download portable ~80–100 MB in <code>tools/ffmpeg/</code> (gitignored).
+          </p>
+          <div class="row g-3 align-items-end mb-3">
+            <div class="col-md-4">
+              <span id="ffmpegStatusBadge" class="badge text-bg-secondary">…</span>
+              <div class="small text-secondary mt-1" id="ffmpegPathLabel"></div>
+            </div>
+            <div class="col-md-4">
+              <button type="button" class="btn btn-accent w-100" id="downloadFfmpegBtn">Scarica ffmpeg</button>
+            </div>
+            <div class="col-md-4">
+              <button type="button" class="btn btn-outline-light w-100" id="prepareLocalBtn">Prepara ambiente Locale</button>
+            </div>
+          </div>
+          <div class="mb-3">
+            <button type="button" class="btn btn-sm btn-outline-light d-none" id="cancelFfmpegBtn">Annulla download ffmpeg</button>
+          </div>
+          <div id="ffmpegReqsBox" class="model-reqs mb-3">
+            <div class="small fw-semibold mb-1">Requisiti ffmpeg</div>
+            <ul class="small text-secondary mb-0" id="ffmpegReqsList">
+              <li>Spazio disco: decine di MB (~80–100 MB su Windows)</li>
+              <li>Formati: ogg/opus/m4a/webm (WhatsApp)</li>
+              <li>WAV/MP3: spesso ok senza ffmpeg (NAudio)</li>
+            </ul>
+          </div>
+          <div id="ffmpegProgressWrap" class="download-progress d-none mb-3">
+            <div class="d-flex justify-content-between small text-secondary mb-1">
+              <span id="ffmpegProgressLabel">Download ffmpeg…</span>
+              <span id="ffmpegProgressPct">0%</span>
+            </div>
+            <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div id="ffmpegProgressBar" class="progress-bar bg-success" style="width: 0%"></div>
+            </div>
+          </div>
+          <p class="small text-secondary mb-0" id="ffmpegMessageLine"></p>
         </section>
 
         <section class="panel" aria-labelledby="settings-heading">

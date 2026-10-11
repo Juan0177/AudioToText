@@ -47,7 +47,7 @@ public sealed class LocalWhisperTranscriptionService : ITranscriptionService
         {
             _logger.LogError(ex, "Audio conversion failed for {File}", fileName);
             throw new InvalidOperationException(
-                "Impossibile convertire l’audio. Per ogg/opus installa ffmpeg; altrimenti usa wav/mp3.");
+                "Impossibile convertire l’audio. Per ogg/opus usa Impostazioni → Scarica ffmpeg; altrimenti usa wav/mp3.");
         }
 
         var text = await _runtime.TranscribeWavAsync(wav, language, model, cancellationToken);

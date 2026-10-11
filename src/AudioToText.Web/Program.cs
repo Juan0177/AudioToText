@@ -14,10 +14,22 @@ builder.Services.Configure<TranscriptionOptions>(
 builder.Services.AddControllers();
 builder.Services.AddSingleton<AudioUploadValidator>();
 builder.Services.AddSingleton<AppLocalSettingsStore>();
+builder.Services.AddSingleton<IFfmpegToolService, FfmpegToolService>();
 builder.Services.AddSingleton<AudioPcmConverter>();
+builder.Services.AddSingleton<ITldrService, ExtractiveTldrService>();
 builder.Services.AddSingleton<ILocalWhisperRuntime, LocalWhisperRuntime>();
 builder.Services.AddSingleton<FakeTranscriptionService>();
 builder.Services.AddSingleton<LocalWhisperTranscriptionService>();
+builder.Services.AddHttpClient("whisper-models", client =>
+{
+    client.Timeout = TimeSpan.FromHours(2);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("AudioToText/1.0");
+});
+builder.Services.AddHttpClient("ffmpeg-tools", client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(30);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("AudioToText/1.0");
+});
 builder.Services.AddHttpClient<CloudflareWorkersAiTranscriptionService>(client =>
 {
     client.Timeout = TimeSpan.FromMinutes(3);
