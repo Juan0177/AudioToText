@@ -84,19 +84,22 @@ public class ProviderSettingsTests : IDisposable
     [Fact]
     public async Task PostTldr_ReturnsExtractiveSummary()
     {
+        var text =
+            "Ciao Marco, ti scrivo per il viaggio di sabato. Partiamo alle nove dalla stazione centrale. " +
+            "Porta il biglietto stampato e una bottiglia d'acqua. Il treno arriva a Firenze verso mezzogiorno. " +
+            "Poi andiamo a piedi all'hotel vicino al Duomo. La cena è prenotata alle otto in un ristorante tipico. " +
+            "Se piove portiamo gli ombrelli. Fammi sapere se hai bisogno di altro prima di sabato.";
         var response = await _client.PostAsJsonAsync(
             "/api/transcriptions/tldr",
-            new
-            {
-                text =
-                    "Ciao, ti chiamo più tardi per confermare l'appuntamento di domani alle tre. " +
-                    "Porta i documenti. Se piove ci spostiamo online. Fammi sapere."
-            });
+            new { text });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         Assert.True(doc.RootElement.TryGetProperty("tldr", out var tldr));
         Assert.Equal("extractive", tldr.GetProperty("method").GetString());
-        Assert.False(string.IsNullOrWhiteSpace(tldr.GetProperty("summary").GetString()));
+        var summary = tldr.GetProperty("summary").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(summary));
+        Assert.True(summary!.Length < text.Length);
+        Assert.NotEqual(text.Trim(), summary.Trim());
     }
 
     [Fact]

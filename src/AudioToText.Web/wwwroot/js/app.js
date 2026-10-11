@@ -54,13 +54,25 @@
   }
 
   function renderTldr(tldr) {
-    if (!tldr || (!tldr.summary && !(tldr.bullets && tldr.bullets.length))) {
+    if (!tldr) {
       clearTldr();
       return;
     }
 
     $("#tldrMethodLabel").text(tldr.methodLabel || "Riassunto locale (estrattivo)");
     var $body = $("#tldrBody").empty();
+
+    if (tldr.message && !tldr.summary && !(tldr.bullets && tldr.bullets.length)) {
+      $body.append($("<p class='mb-0 tldr-empty'></p>").text(tldr.message));
+      $("#tldrPanel").removeClass("d-none");
+      return;
+    }
+
+    if (!tldr.summary && !(tldr.bullets && tldr.bullets.length)) {
+      clearTldr();
+      return;
+    }
+
     if (tldr.bullets && tldr.bullets.length >= 2) {
       var $ul = $("<ul></ul>");
       tldr.bullets.forEach(function (b) {
@@ -832,6 +844,23 @@
       });
   });
 
+  function showSettingsPanel(panelId) {
+    var id = panelId || "provider";
+    $(".settings-nav__item").each(function () {
+      var active = $(this).data("settings-panel") === id;
+      $(this).toggleClass("is-active", active).attr("aria-selected", active ? "true" : "false");
+    });
+    $(".settings-panel").each(function () {
+      var active = $(this).data("settings-panel") === id;
+      $(this).toggleClass("is-active", active);
+      if (active) {
+        this.removeAttribute("hidden");
+      } else {
+        this.setAttribute("hidden", "hidden");
+      }
+    });
+  }
+
   function showSection(name) {
     var isSettings = name === "settings";
     $("#sectionTranscribe").toggleClass("d-none", isSettings);
@@ -839,9 +868,16 @@
     $("#navTranscribe").toggleClass("active", !isSettings);
     $("#navSettings").toggleClass("active", isSettings);
     if (isSettings) {
+      if (!$(".settings-panel.is-active").length) {
+        showSettingsPanel("provider");
+      }
       loadSettingsStatus();
     }
   }
+
+  $(".settings-nav__item").on("click", function () {
+    showSettingsPanel($(this).data("settings-panel"));
+  });
 
   $("#navTranscribe").on("click", function () {
     showSection("transcribe");
@@ -849,4 +885,6 @@
   $("#navSettings").on("click", function () {
     showSection("settings");
   });
+
+  showSettingsPanel("provider");
 })(jQuery);
