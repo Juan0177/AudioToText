@@ -114,20 +114,16 @@
                 <strong>Cloudflare</strong>: Workers AI (serve Account ID + Token).<br />
                 <strong>Locale</strong>: Whisper.net sul PC (CUDA se disponibile, altrimenti CPU). Nessun secret Cloudflare.
               </p>
-              <div class="row g-3 align-items-end">
-                <div class="col-md-6">
+              <div class="settings-actions">
+                <div class="settings-actions__field">
                   <label for="providerSelect" class="form-label">Provider</label>
                   <select id="providerSelect" class="form-select">
                     <option value="CloudflareRest">Cloudflare</option>
                     <option value="Local">Locale (Whisper)</option>
                   </select>
                 </div>
-                <div class="col-md-3">
-                  <button type="button" class="btn btn-accent w-100" id="saveProviderBtn">Salva provider</button>
-                </div>
-                <div class="col-md-3">
-                  <span id="providerStatus" class="badge text-bg-secondary">…</span>
-                </div>
+                <button type="button" class="btn btn-accent" id="saveProviderBtn">Salva provider</button>
+                <span id="providerStatus" class="badge text-bg-secondary align-self-center">…</span>
               </div>
             </section>
 
@@ -167,57 +163,53 @@
               <p class="settings-panel__lead small text-muted-app" id="localHardwareHint">
                 GTX 1050 Ti (~4GB): preferisci <code>tiny</code>/<code>base</code> (CPU ok). RTX 5070: <code>small</code> su CUDA; <code>medium</code> se la VRAM basta.
               </p>
-              <p class="small text-muted-app mb-3" id="localFfmpegHint">
-                ffmpeg richiesto per vocali WhatsApp (ogg/opus). WAV/MP3 ok senza.
-              </p>
-              <div class="row g-3 align-items-end mb-3">
-                <div class="col-md-5">
-                  <label for="localModelSelect" class="form-label">Modello</label>
-                  <select id="localModelSelect" class="form-select">
-                    <option value="tiny">tiny (veloce, meno accurato)</option>
-                    <option value="base" selected>base (consigliato)</option>
-                    <option value="small">small (più accurato)</option>
-                    <option value="medium">medium (pesante)</option>
-                  </select>
+              <div class="settings-stack">
+                <p class="small text-muted-app mb-0" id="localFfmpegHint">
+                  ffmpeg richiesto per vocali WhatsApp (ogg/opus). WAV/MP3 ok senza.
+                </p>
+                <div class="settings-actions">
+                  <div class="settings-actions__field">
+                    <label for="localModelSelect" class="form-label">Modello</label>
+                    <select id="localModelSelect" class="form-select">
+                      <option value="tiny">tiny (veloce, meno accurato)</option>
+                      <option value="base" selected>base (consigliato)</option>
+                      <option value="small">small (più accurato)</option>
+                      <option value="medium">medium (pesante)</option>
+                    </select>
+                  </div>
+                  <button type="button" class="btn btn-accent" id="saveLocalModelBtn">Salva modello</button>
+                  <button type="button" class="btn btn-ghost" id="downloadModelBtn">Scarica modello</button>
+                  <button type="button" class="btn btn-ghost d-none" id="cancelDownloadBtn">Annulla</button>
+                  <span id="localModelStatus" class="badge text-bg-secondary align-self-center">…</span>
                 </div>
-                <div class="col-md-3">
-                  <button type="button" class="btn btn-accent w-100" id="saveLocalModelBtn">Salva modello</button>
-                </div>
-                <div class="col-md-3">
-                  <button type="button" class="btn btn-ghost w-100" id="downloadModelBtn">Scarica modello</button>
-                </div>
-                <div class="col-md-1">
-                  <button type="button" class="btn btn-ghost w-100 d-none" id="cancelDownloadBtn">Annulla</button>
-                  <span id="localModelStatus" class="badge text-bg-secondary">…</span>
-                </div>
-              </div>
 
-              <div id="modelReqsBox" class="model-reqs mb-3">
-                <div class="small fw-semibold mb-1">Requisiti modello selezionato</div>
-                <ul class="small text-muted-app mb-0" id="modelReqsList">
-                  <li id="reqSize">Download / disco: …</li>
-                  <li id="reqRam">RAM: …</li>
-                  <li id="reqVram">VRAM: …</li>
-                  <li id="reqRecommend">Consiglio: …</li>
+                <div id="modelReqsBox" class="model-reqs">
+                  <div class="small fw-semibold mb-1">Requisiti modello selezionato</div>
+                  <ul class="small text-muted-app mb-0" id="modelReqsList">
+                    <li id="reqSize">Download / disco: …</li>
+                    <li id="reqRam">RAM: …</li>
+                    <li id="reqVram">VRAM: …</li>
+                    <li id="reqRecommend">Consiglio: …</li>
+                  </ul>
+                </div>
+
+                <div id="downloadProgressWrap" class="download-progress d-none">
+                  <div class="d-flex justify-content-between small text-muted-app mb-1">
+                    <span id="downloadProgressLabel">Download…</span>
+                    <span id="downloadProgressPct">0%</span>
+                  </div>
+                  <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <div id="downloadProgressBar" class="progress-bar bg-success" style="width: 0%"></div>
+                  </div>
+                </div>
+
+                <ul class="small text-muted-app mb-0 list-unstyled runtime-details" id="localRuntimeDetails">
+                  <li>Runtime: <span id="localRuntimeLabel">…</span></li>
+                  <li>ffmpeg: <span id="localFfmpegLabel">…</span></li>
+                  <li>Cartella modelli: <code id="localModelsPath">…</code></li>
+                  <li id="localMessageLine"></li>
                 </ul>
               </div>
-
-              <div id="downloadProgressWrap" class="download-progress d-none mb-3">
-                <div class="d-flex justify-content-between small text-muted-app mb-1">
-                  <span id="downloadProgressLabel">Download…</span>
-                  <span id="downloadProgressPct">0%</span>
-                </div>
-                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                  <div id="downloadProgressBar" class="progress-bar bg-success" style="width: 0%"></div>
-                </div>
-              </div>
-
-              <ul class="small text-muted-app mb-0 list-unstyled runtime-details" id="localRuntimeDetails">
-                <li>Runtime: <span id="localRuntimeLabel">…</span></li>
-                <li>ffmpeg: <span id="localFfmpegLabel">…</span></li>
-                <li>Cartella modelli: <code id="localModelsPath">…</code></li>
-                <li id="localMessageLine"></li>
-              </ul>
             </section>
 
             <section class="settings-panel" id="settingsPanelFfmpeg" data-settings-panel="ffmpeg" role="tabpanel" aria-labelledby="settingsNavFfmpeg" hidden>
