@@ -47,12 +47,22 @@
               <button type="button" id="recordBtn" class="btn btn-ghost w-100">Registra</button>
             </div>
             <div class="col-12 col-lg-6">
-              <p id="status" class="status status--inline mb-0" role="status" aria-live="polite">Pronto.</p>
+              <p id="status" class="status status--inline mb-0" role="status" aria-live="polite">
+                <span class="status__icon" aria-hidden="true"></span>
+                <span class="status__text">Pronto.</span>
+              </p>
             </div>
+          </div>
+
+          <div id="doneCue" class="done-cue d-none" aria-hidden="true">
+            <svg class="done-cue__chevron" viewBox="0 0 24 24" width="28" height="28" focusable="false">
+              <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="done-cue__label">Risultato qui sotto</span>
           </div>
         </section>
 
-        <section class="result-block" aria-labelledby="result-heading">
+        <section id="trascrizione" class="result-block" aria-labelledby="result-heading">
           <div class="panel__toolbar">
             <h2 id="result-heading" class="panel__title">Trascrizione</h2>
             <div class="btn-group">

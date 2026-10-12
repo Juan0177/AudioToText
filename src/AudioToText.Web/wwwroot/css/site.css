@@ -348,10 +348,27 @@ label.btn-accent[aria-disabled="true"] {
 }
 
 .status--inline {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
   padding: 0.65rem 0.9rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: var(--surface-strong);
+}
+
+.status__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.status__icon:empty { display: none; }
+
+.status__check {
+  display: block;
+  color: var(--accent);
 }
 
 .status.is-error {
@@ -360,6 +377,50 @@ label.btn-accent[aria-disabled="true"] {
 }
 
 .status.is-busy { color: var(--ink); }
+
+.status.is-ok {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background: rgba(90, 143, 123, 0.12);
+}
+
+.done-cue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-top: var(--space-3);
+  color: var(--muted);
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.done-cue.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.done-cue__chevron {
+  display: block;
+  color: var(--accent);
+  animation: cueBob 1.1s ease-in-out 2;
+}
+
+.done-cue__label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.result-block.is-highlighted {
+  border-color: var(--line-strong);
+  outline: 2px solid rgba(90, 143, 123, 0.35);
+  outline-offset: 2px;
+  transition: border-color 0.25s ease, outline-color 0.25s ease;
+}
 
 .btn.is-recording {
   border-color: var(--brass) !important;
@@ -582,6 +643,11 @@ code { color: #c5ddd2; }
   to { opacity: 1; transform: translateX(0); }
 }
 
+@keyframes cueBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
 @media (max-width: 767.98px) {
   .app-shell {
     width: min(100% - 1.25rem, var(--max));
@@ -624,5 +690,14 @@ code { color: #c5ddd2; }
   *, *::before, *::after {
     animation: none !important;
     transition: none !important;
+  }
+
+  .done-cue {
+    opacity: 1;
+    transform: none;
+  }
+
+  .done-cue:not(.is-visible) {
+    opacity: 0;
   }
 }

@@ -14,11 +14,64 @@
   var mediaRecorder = null;
   var recordedChunks = [];
 
+  var checkSvg =
+    '<svg class="status__check" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">' +
+    '<path d="M3 8.5l3.2 3.2L13 4.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' +
+    "</svg>";
+
   function setStatus(message, kind) {
+    var $icon = $status.find(".status__icon");
+    var $text = $status.find(".status__text");
+    if (!$text.length) {
+      $status.text(message);
+    } else {
+      $text.text(message || "");
+      if (kind === "ok") {
+        $icon.html(checkSvg);
+      } else {
+        $icon.empty();
+      }
+    }
     $status
-      .text(message)
       .toggleClass("is-error", kind === "error")
-      .toggleClass("is-busy", kind === "busy");
+      .toggleClass("is-busy", kind === "busy")
+      .toggleClass("is-ok", kind === "ok");
+  }
+
+  function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function celebrateTranscriptionDone() {
+    var $results = $("#trascrizione");
+    var $cue = $("#doneCue");
+    $dropZone.addClass("is-success");
+    $results.addClass("is-highlighted");
+    $cue.removeClass("d-none").addClass("is-visible");
+
+    if (!prefersReducedMotion()) {
+      var el = $results.get(0);
+      if (el && typeof el.scrollIntoView === "function") {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } else {
+      var elReduced = $results.get(0);
+      if (elReduced && typeof elReduced.scrollIntoView === "function") {
+        elReduced.scrollIntoView({ block: "start" });
+      }
+    }
+
+    window.clearTimeout(celebrateTranscriptionDone._timer);
+    celebrateTranscriptionDone._timer = window.setTimeout(function () {
+      $dropZone.removeClass("is-success");
+      $results.removeClass("is-highlighted");
+      $cue.removeClass("is-visible");
+      window.setTimeout(function () {
+        if (!$cue.hasClass("is-visible")) {
+          $cue.addClass("d-none");
+        }
+      }, 350);
+    }, prefersReducedMotion() ? 1200 : 2800);
   }
 
   function setBusy(next) {
@@ -120,11 +173,8 @@
       .done(function (data) {
         setTranscript(data.text || "");
         renderTldr(data.tldr);
-        setStatus("Trascrizione completata.", "ok");
-        $dropZone.addClass("is-success");
-        setTimeout(function () {
-          $dropZone.removeClass("is-success");
-        }, 900);
+        setStatus("Completata", "ok");
+        celebrateTranscriptionDone();
       })
       .fail(function (xhr) {
         var message =
