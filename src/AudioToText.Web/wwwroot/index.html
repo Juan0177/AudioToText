@@ -7,41 +7,37 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Literata:opsz,wght@7..72,500;7..72,600;7..72,700&display=swap" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="/css/site.css" rel="stylesheet" />
 </head>
 <body>
+  <div class="atmosphere" aria-hidden="true"></div>
   <div class="page">
-    <main class="container py-4 py-md-5">
-      <header class="mb-4 mb-md-5">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
-          <div>
-            <p class="brand mb-2">AudioToText</p>
-            <h1 class="tagline">Trascrivi i vocali di WhatsApp</h1>
-            <p class="lead-muted mb-0">
-              Cloudflare Workers AI oppure Whisper locale (GPU CUDA con fallback CPU).
-            </p>
-          </div>
-          <nav class="nav-pills-custom" aria-label="Sezioni">
-            <button type="button" class="btn btn-sm btn-outline-light active" data-section="transcribe" id="navTranscribe">Trascrivi</button>
-            <button type="button" class="btn btn-sm btn-outline-light" data-section="settings" id="navSettings">Impostazioni</button>
-          </nav>
-        </div>
+    <main class="app-shell">
+      <header class="topbar">
+        <nav class="topbar__nav" aria-label="Sezioni principali">
+          <button type="button" class="topbar__link is-active" data-section="transcribe" id="navTranscribe">Trascrivi</button>
+          <button type="button" class="topbar__link" data-section="settings" id="navSettings">Impostazioni</button>
+        </nav>
       </header>
 
-      <div id="sectionTranscribe">
-        <section class="panel" aria-labelledby="upload-heading">
-          <h2 id="upload-heading" class="visually-hidden">Carica audio</h2>
+      <div id="sectionTranscribe" class="view-transcribe">
+        <section class="hero" aria-labelledby="hero-brand">
+          <p id="hero-brand" class="hero__brand">AudioToText</p>
+          <h1 class="hero__headline">I vocali, in testo.</h1>
+          <p class="hero__support">Cloudflare Workers AI oppure Whisper locale — carica un audio e leggilo subito.</p>
+
           <div id="dropZone" class="drop-zone" tabindex="0" role="button" aria-label="Trascina o scegli un file audio">
-            <p class="mb-1 fw-semibold">Trascina qui il vocale</p>
-            <p class="mb-3 small text-muted-app">oppure clicca per scegliere (ogg, opus, m4a, mp3, wav, webm)</p>
-            <label for="fileInput" id="pickFileBtn" class="btn btn-accent">Scegli file</label>
+            <h2 id="upload-heading" class="visually-hidden">Carica audio</h2>
+            <p class="drop-zone__title">Trascina qui il vocale</p>
+            <p class="drop-zone__hint">ogg · opus · m4a · mp3 · wav · webm</p>
+            <label for="fileInput" id="pickFileBtn" class="btn btn-accent btn-cta">Scegli file</label>
             <input type="file" id="fileInput" class="visually-hidden" accept="audio/*,.ogg,.opus,.m4a,.mp3,.wav,.webm,.mp4" />
           </div>
 
-          <div class="controls row g-3 align-items-end mt-3">
-            <div class="col-sm-6 col-md-4">
+          <div class="hero__controls row g-3 align-items-end">
+            <div class="col-sm-6 col-lg-3">
               <label for="language" class="form-label">Lingua</label>
               <select id="language" class="form-select">
                 <option value="italian" selected>Italiano</option>
@@ -49,36 +45,36 @@
                 <option value="en">English</option>
               </select>
             </div>
-            <div class="col-sm-6 col-md-4">
+            <div class="col-sm-6 col-lg-3">
               <label class="form-label d-block">Microfono</label>
-              <button type="button" id="recordBtn" class="btn btn-outline-light w-100">Registra</button>
+              <button type="button" id="recordBtn" class="btn btn-ghost w-100">Registra</button>
             </div>
-            <div class="col-12 col-md-4">
-              <p id="status" class="status mb-0" role="status" aria-live="polite">Pronto.</p>
+            <div class="col-12 col-lg-6">
+              <p id="status" class="status status--inline mb-0" role="status" aria-live="polite">Pronto.</p>
             </div>
           </div>
         </section>
 
-        <section class="panel mt-4" aria-labelledby="result-heading">
-          <div class="d-flex justify-content-between align-items-center mb-2 gap-2 flex-wrap">
-            <h2 id="result-heading" class="h5 mb-0">Trascrizione</h2>
+        <section class="result-block" aria-labelledby="result-heading">
+          <div class="panel__toolbar">
+            <h2 id="result-heading" class="panel__title">Trascrizione</h2>
             <div class="btn-group">
-              <button type="button" id="copyBtn" class="btn btn-sm btn-outline-light" disabled>Copia</button>
-              <button type="button" id="downloadBtn" class="btn btn-sm btn-outline-light" disabled>Scarica .txt</button>
-              <button type="button" id="clearBtn" class="btn btn-sm btn-outline-light" disabled>Pulisci</button>
+              <button type="button" id="copyBtn" class="btn btn-sm btn-ghost" disabled>Copia</button>
+              <button type="button" id="downloadBtn" class="btn btn-sm btn-ghost" disabled>Scarica .txt</button>
+              <button type="button" id="clearBtn" class="btn btn-sm btn-ghost" disabled>Pulisci</button>
             </div>
           </div>
-          <textarea id="transcript" class="form-control transcript" rows="10" readonly placeholder="Il testo apparirà qui…"></textarea>
+          <textarea id="transcript" class="form-control transcript" rows="9" readonly placeholder="Il testo apparirà qui…"></textarea>
 
           <div id="tldrPanel" class="tldr-panel d-none">
-            <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+            <div class="panel__toolbar">
               <div>
-                <h3 class="mb-1">Riassunto (TLDR)</h3>
-                <p class="mb-0" id="tldrMethodLabel">Riassunto locale (estrattivo)</p>
+                <h3 class="tldr-panel__title">Riassunto (TLDR)</h3>
+                <p class="tldr-panel__meta mb-0" id="tldrMethodLabel">Riassunto locale (estrattivo)</p>
               </div>
               <div class="btn-group">
-                <button type="button" id="copyTldrBtn" class="btn btn-sm btn-outline-light">Copia TLDR</button>
-                <button type="button" id="regenTldrBtn" class="btn btn-sm btn-outline-light">Ricalcola</button>
+                <button type="button" id="copyTldrBtn" class="btn btn-sm btn-ghost">Copia TLDR</button>
+                <button type="button" id="regenTldrBtn" class="btn btn-sm btn-ghost">Ricalcola</button>
               </div>
             </div>
             <div id="tldrBody" class="tldr-body" aria-live="polite"></div>
@@ -86,166 +82,185 @@
         </section>
       </div>
 
-      <div id="sectionSettings" class="d-none">
-        <section class="panel mb-4" aria-labelledby="provider-heading">
-          <h2 id="provider-heading" class="h5 mb-2">Motore di trascrizione</h2>
-          <p class="small text-muted-app mb-3">
-            <strong>Cloudflare</strong>: Workers AI (serve Account ID + Token).<br />
-            <strong>Locale</strong>: Whisper.net sul PC (CUDA se disponibile, altrimenti CPU). Nessun secret Cloudflare.
-          </p>
-          <div class="row g-3 align-items-end">
-            <div class="col-md-5">
-              <label for="providerSelect" class="form-label">Provider</label>
-              <select id="providerSelect" class="form-select">
-                <option value="CloudflareRest">Cloudflare</option>
-                <option value="Local">Locale (Whisper)</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <button type="button" class="btn btn-accent w-100" id="saveProviderBtn">Salva provider</button>
-            </div>
-            <div class="col-md-4">
-              <span id="providerStatus" class="badge text-bg-secondary">…</span>
-            </div>
-          </div>
-        </section>
+      <div id="sectionSettings" class="view-settings d-none">
+        <div class="settings-intro">
+          <p class="settings-intro__brand">AudioToText</p>
+          <h1 class="settings-intro__title">Impostazioni</h1>
+          <p class="settings-intro__lead">Provider, secret Cloudflare e ambiente Locale — un pannello alla volta.</p>
+        </div>
 
-        <section class="panel mb-4" aria-labelledby="local-heading">
-          <h2 id="local-heading" class="h5 mb-2">Locale — modello Whisper</h2>
-          <p class="small text-muted-app mb-3" id="localHardwareHint">
-            GTX 1050 Ti (~4GB): preferisci <code>tiny</code>/<code>base</code> (CPU ok). RTX 5070: <code>small</code> su CUDA; <code>medium</code> se la VRAM basta.
-          </p>
-          <p class="small text-muted-app mb-3" id="localFfmpegHint">
-            ffmpeg richiesto per vocali WhatsApp (ogg/opus). WAV/MP3 ok senza.
-          </p>
-          <div class="row g-3 align-items-end mb-3">
-            <div class="col-md-4">
-              <label for="localModelSelect" class="form-label">Modello</label>
-              <select id="localModelSelect" class="form-select">
-                <option value="tiny">tiny (veloce, meno accurato)</option>
-                <option value="base" selected>base (consigliato)</option>
-                <option value="small">small (più accurato)</option>
-                <option value="medium">medium (pesante)</option>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <button type="button" class="btn btn-accent w-100" id="saveLocalModelBtn">Salva modello</button>
-            </div>
-            <div class="col-md-3">
-              <button type="button" class="btn btn-outline-light w-100" id="downloadModelBtn">Scarica modello</button>
-            </div>
-            <div class="col-md-2">
-              <button type="button" class="btn btn-outline-light w-100 d-none" id="cancelDownloadBtn">Annulla</button>
-              <span id="localModelStatus" class="badge text-bg-secondary">…</span>
-            </div>
-          </div>
+        <div class="settings-shell">
+          <aside class="settings-nav" aria-label="Menu impostazioni">
+            <p class="settings-nav__label">Menu</p>
+            <nav class="settings-nav__list" role="tablist">
+              <button type="button" class="settings-nav__item is-active" role="tab" aria-selected="true" data-settings-panel="provider" id="settingsNavProvider">Provider</button>
+              <button type="button" class="settings-nav__item" role="tab" aria-selected="false" data-settings-panel="cloudflare" id="settingsNavCloudflare">Cloudflare</button>
+              <button type="button" class="settings-nav__item" role="tab" aria-selected="false" data-settings-panel="local" id="settingsNavLocal">Locale / modelli</button>
+              <button type="button" class="settings-nav__item" role="tab" aria-selected="false" data-settings-panel="ffmpeg" id="settingsNavFfmpeg">ffmpeg</button>
+            </nav>
+          </aside>
 
-          <div id="modelReqsBox" class="model-reqs mb-3">
-            <div class="small fw-semibold mb-1">Requisiti modello selezionato</div>
-            <ul class="small text-muted-app mb-0" id="modelReqsList">
-              <li id="reqSize">Download / disco: …</li>
-              <li id="reqRam">RAM: …</li>
-              <li id="reqVram">VRAM: …</li>
-              <li id="reqRecommend">Consiglio: …</li>
-            </ul>
-          </div>
+          <div class="settings-content">
+            <section class="settings-panel is-active" id="settingsPanelProvider" data-settings-panel="provider" role="tabpanel" aria-labelledby="settingsNavProvider">
+              <h2 class="settings-panel__title">Motore di trascrizione</h2>
+              <p class="settings-panel__lead small text-muted-app">
+                <strong>Cloudflare</strong>: Workers AI (serve Account ID + Token).<br />
+                <strong>Locale</strong>: Whisper.net sul PC (CUDA se disponibile, altrimenti CPU). Nessun secret Cloudflare.
+              </p>
+              <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                  <label for="providerSelect" class="form-label">Provider</label>
+                  <select id="providerSelect" class="form-select">
+                    <option value="CloudflareRest">Cloudflare</option>
+                    <option value="Local">Locale (Whisper)</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <button type="button" class="btn btn-accent w-100" id="saveProviderBtn">Salva provider</button>
+                </div>
+                <div class="col-md-3">
+                  <span id="providerStatus" class="badge text-bg-secondary">…</span>
+                </div>
+              </div>
+            </section>
 
-          <div id="downloadProgressWrap" class="download-progress d-none mb-3">
-            <div class="d-flex justify-content-between small text-muted-app mb-1">
-              <span id="downloadProgressLabel">Download…</span>
-              <span id="downloadProgressPct">0%</span>
-            </div>
-            <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-              <div id="downloadProgressBar" class="progress-bar bg-success" style="width: 0%"></div>
-            </div>
-          </div>
+            <section class="settings-panel" id="settingsPanelCloudflare" data-settings-panel="cloudflare" role="tabpanel" aria-labelledby="settingsNavCloudflare" hidden>
+              <h2 class="settings-panel__title">Cloudflare</h2>
+              <p class="settings-panel__lead small text-muted-app">
+                Valori in <code>appsettings.Local.json</code> (gitignored). Dopo il salvataggio i campi si svuotano.
+              </p>
 
-          <ul class="small text-muted-app mb-0 list-unstyled" id="localRuntimeDetails">
-            <li>Runtime: <span id="localRuntimeLabel">…</span></li>
-            <li>ffmpeg: <span id="localFfmpegLabel">…</span></li>
-            <li>Cartella modelli: <code id="localModelsPath">…</code></li>
-            <li id="localMessageLine"></li>
-          </ul>
-        </section>
+              <div class="settings-row mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                  <label class="form-label mb-0" for="accountIdInput">Account ID</label>
+                  <span id="accountIdStatus" class="badge text-bg-secondary">…</span>
+                </div>
+                <div class="input-group">
+                  <input type="password" class="form-control" id="accountIdInput" autocomplete="off" placeholder="Nuovo Account ID" spellcheck="false" />
+                  <button type="button" class="btn btn-accent" id="saveAccountIdBtn">Aggiorna</button>
+                  <button type="button" class="btn btn-ghost" id="clearAccountIdBtn">Rimuovi</button>
+                </div>
+              </div>
 
-        <section class="panel mb-4" aria-labelledby="ffmpeg-heading">
-          <h2 id="ffmpeg-heading" class="h5 mb-2">Locale — ffmpeg</h2>
-          <p class="small text-muted-app mb-3">
-            Serve per vocali WhatsApp (<code>ogg</code>/<code>opus</code>/<code>m4a</code>/<code>webm</code>).
-            WAV/MP3 possono funzionare senza. Download da GitHub (BtbN/FFmpeg-Builds) ~80–90 MB in <code>tools/ffmpeg/</code> (gitignored).
-          </p>
-          <div class="row g-3 align-items-end mb-3">
-            <div class="col-md-4">
-              <span id="ffmpegStatusBadge" class="badge text-bg-secondary">…</span>
-              <div class="small text-muted-app mt-1" id="ffmpegPathLabel"></div>
-            </div>
-            <div class="col-md-4">
-              <button type="button" class="btn btn-accent w-100" id="downloadFfmpegBtn">Scarica ffmpeg</button>
-            </div>
-            <div class="col-md-4">
-              <button type="button" class="btn btn-outline-light w-100" id="prepareLocalBtn">Prepara ambiente Locale</button>
-            </div>
-          </div>
-          <div class="mb-3">
-            <button type="button" class="btn btn-sm btn-outline-light d-none" id="cancelFfmpegBtn">Annulla download ffmpeg</button>
-          </div>
-          <div id="ffmpegReqsBox" class="model-reqs mb-3">
-            <div class="small fw-semibold mb-1">Requisiti ffmpeg</div>
-            <ul class="small text-muted-app mb-0" id="ffmpegReqsList">
-              <li>Download da GitHub (BtbN) ~80–90 MB — mirror veloce</li>
-              <li>Formati: ogg/opus/m4a/webm (WhatsApp)</li>
-              <li>WAV/MP3: spesso ok senza ffmpeg (NAudio)</li>
-            </ul>
-          </div>
-          <div id="ffmpegProgressWrap" class="download-progress d-none mb-3">
-            <div class="d-flex justify-content-between small text-muted-app mb-1">
-              <span id="ffmpegProgressLabel">Download ffmpeg…</span>
-              <span id="ffmpegProgressPct">0%</span>
-            </div>
-            <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-              <div id="ffmpegProgressBar" class="progress-bar bg-success" style="width: 0%"></div>
-            </div>
-          </div>
-          <p class="small text-muted-app mb-0" id="ffmpegMessageLine"></p>
-        </section>
+              <div class="settings-row">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                  <label class="form-label mb-0" for="apiTokenInput">API Token</label>
+                  <span id="apiTokenStatus" class="badge text-bg-secondary">…</span>
+                </div>
+                <div class="input-group">
+                  <input type="password" class="form-control" id="apiTokenInput" autocomplete="off" placeholder="Nuovo API Token" spellcheck="false" />
+                  <button type="button" class="btn btn-accent" id="saveApiTokenBtn">Aggiorna</button>
+                  <button type="button" class="btn btn-ghost" id="clearApiTokenBtn">Rimuovi</button>
+                </div>
+              </div>
+            </section>
 
-        <section class="panel" aria-labelledby="settings-heading">
-          <h2 id="settings-heading" class="h5 mb-2">Cloudflare</h2>
-          <p class="small text-muted-app mb-4">
-            Valori in <code>appsettings.Local.json</code> (gitignored). Dopo il salvataggio i campi si svuotano.
-          </p>
+            <section class="settings-panel" id="settingsPanelLocal" data-settings-panel="local" role="tabpanel" aria-labelledby="settingsNavLocal" hidden>
+              <h2 class="settings-panel__title">Locale — modello Whisper</h2>
+              <p class="settings-panel__lead small text-muted-app" id="localHardwareHint">
+                GTX 1050 Ti (~4GB): preferisci <code>tiny</code>/<code>base</code> (CPU ok). RTX 5070: <code>small</code> su CUDA; <code>medium</code> se la VRAM basta.
+              </p>
+              <p class="small text-muted-app mb-3" id="localFfmpegHint">
+                ffmpeg richiesto per vocali WhatsApp (ogg/opus). WAV/MP3 ok senza.
+              </p>
+              <div class="row g-3 align-items-end mb-3">
+                <div class="col-md-5">
+                  <label for="localModelSelect" class="form-label">Modello</label>
+                  <select id="localModelSelect" class="form-select">
+                    <option value="tiny">tiny (veloce, meno accurato)</option>
+                    <option value="base" selected>base (consigliato)</option>
+                    <option value="small">small (più accurato)</option>
+                    <option value="medium">medium (pesante)</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <button type="button" class="btn btn-accent w-100" id="saveLocalModelBtn">Salva modello</button>
+                </div>
+                <div class="col-md-3">
+                  <button type="button" class="btn btn-ghost w-100" id="downloadModelBtn">Scarica modello</button>
+                </div>
+                <div class="col-md-1">
+                  <button type="button" class="btn btn-ghost w-100 d-none" id="cancelDownloadBtn">Annulla</button>
+                  <span id="localModelStatus" class="badge text-bg-secondary">…</span>
+                </div>
+              </div>
 
-          <div class="settings-row mb-4">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-              <label class="form-label mb-0" for="accountIdInput">Account ID</label>
-              <span id="accountIdStatus" class="badge text-bg-secondary">…</span>
-            </div>
-            <div class="input-group">
-              <input type="password" class="form-control" id="accountIdInput" autocomplete="off" placeholder="Nuovo Account ID" spellcheck="false" />
-              <button type="button" class="btn btn-accent" id="saveAccountIdBtn">Aggiorna</button>
-              <button type="button" class="btn btn-outline-light" id="clearAccountIdBtn">Rimuovi</button>
-            </div>
+              <div id="modelReqsBox" class="model-reqs mb-3">
+                <div class="small fw-semibold mb-1">Requisiti modello selezionato</div>
+                <ul class="small text-muted-app mb-0" id="modelReqsList">
+                  <li id="reqSize">Download / disco: …</li>
+                  <li id="reqRam">RAM: …</li>
+                  <li id="reqVram">VRAM: …</li>
+                  <li id="reqRecommend">Consiglio: …</li>
+                </ul>
+              </div>
+
+              <div id="downloadProgressWrap" class="download-progress d-none mb-3">
+                <div class="d-flex justify-content-between small text-muted-app mb-1">
+                  <span id="downloadProgressLabel">Download…</span>
+                  <span id="downloadProgressPct">0%</span>
+                </div>
+                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                  <div id="downloadProgressBar" class="progress-bar bg-success" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <ul class="small text-muted-app mb-0 list-unstyled runtime-details" id="localRuntimeDetails">
+                <li>Runtime: <span id="localRuntimeLabel">…</span></li>
+                <li>ffmpeg: <span id="localFfmpegLabel">…</span></li>
+                <li>Cartella modelli: <code id="localModelsPath">…</code></li>
+                <li id="localMessageLine"></li>
+              </ul>
+            </section>
+
+            <section class="settings-panel" id="settingsPanelFfmpeg" data-settings-panel="ffmpeg" role="tabpanel" aria-labelledby="settingsNavFfmpeg" hidden>
+              <h2 class="settings-panel__title">Locale — ffmpeg</h2>
+              <p class="settings-panel__lead small text-muted-app">
+                Serve per vocali WhatsApp (<code>ogg</code>/<code>opus</code>/<code>m4a</code>/<code>webm</code>).
+                WAV/MP3 possono funzionare senza. Download da GitHub (BtbN/FFmpeg-Builds) ~80–90 MB in <code>tools/ffmpeg/</code> (gitignored).
+              </p>
+              <div class="row g-3 align-items-end mb-3">
+                <div class="col-md-4">
+                  <span id="ffmpegStatusBadge" class="badge text-bg-secondary">…</span>
+                  <div class="small text-muted-app mt-1" id="ffmpegPathLabel"></div>
+                </div>
+                <div class="col-md-4">
+                  <button type="button" class="btn btn-accent w-100" id="downloadFfmpegBtn">Scarica ffmpeg</button>
+                </div>
+                <div class="col-md-4">
+                  <button type="button" class="btn btn-ghost w-100" id="prepareLocalBtn">Prepara ambiente Locale</button>
+                </div>
+              </div>
+              <div class="mb-3">
+                <button type="button" class="btn btn-sm btn-ghost d-none" id="cancelFfmpegBtn">Annulla download ffmpeg</button>
+              </div>
+              <div id="ffmpegReqsBox" class="model-reqs mb-3">
+                <div class="small fw-semibold mb-1">Requisiti ffmpeg</div>
+                <ul class="small text-muted-app mb-0" id="ffmpegReqsList">
+                  <li>Download da GitHub (BtbN) ~80–90 MB — mirror veloce</li>
+                  <li>Formati: ogg/opus/m4a/webm (WhatsApp)</li>
+                  <li>WAV/MP3: spesso ok senza ffmpeg (NAudio)</li>
+                </ul>
+              </div>
+              <div id="ffmpegProgressWrap" class="download-progress d-none mb-3">
+                <div class="d-flex justify-content-between small text-muted-app mb-1">
+                  <span id="ffmpegProgressLabel">Download ffmpeg…</span>
+                  <span id="ffmpegProgressPct">0%</span>
+                </div>
+                <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                  <div id="ffmpegProgressBar" class="progress-bar bg-success" style="width: 0%"></div>
+                </div>
+              </div>
+              <p class="small text-muted-app mb-0" id="ffmpegMessageLine"></p>
+            </section>
+
+            <p id="settingsMessage" class="status settings-message mb-0" role="status" aria-live="polite"></p>
           </div>
-
-          <div class="settings-row">
-            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-              <label class="form-label mb-0" for="apiTokenInput">API Token</label>
-              <span id="apiTokenStatus" class="badge text-bg-secondary">…</span>
-            </div>
-            <div class="input-group">
-              <input type="password" class="form-control" id="apiTokenInput" autocomplete="off" placeholder="Nuovo API Token" spellcheck="false" />
-              <button type="button" class="btn btn-accent" id="saveApiTokenBtn">Aggiorna</button>
-              <button type="button" class="btn btn-outline-light" id="clearApiTokenBtn">Rimuovi</button>
-            </div>
-          </div>
-        </section>
-
-        <p id="settingsMessage" class="status mt-3 mb-0" role="status" aria-live="polite"></p>
+        </div>
       </div>
 
-      <footer class="mt-4 small text-muted-app">
-        Impostazioni: scegli Cloudflare o Locale; i secret Cloudflare non vengono mai mostrati dopo il salvataggio.
-        Locale richiede download modello (+ ffmpeg per ogg/opus WhatsApp).
+      <footer class="app-footer">
+        Secret Cloudflare mai mostrati dopo il salvataggio. Locale: modello + ffmpeg per ogg/opus WhatsApp.
       </footer>
     </main>
   </div>
